@@ -1,1 +1,0 @@
-autoload ("quadgrid_loop", "quadgrid.oct");
