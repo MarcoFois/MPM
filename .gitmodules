@@ -1,0 +1,3 @@
+[submodule "quadgrid"]
+	path = quadgrid
+	url = git@github.com:carlodefalco/quadgrid.git
