@@ -194,9 +194,12 @@ int main ()
 
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     while (t < 4)
       {
 =======
+=======
+>>>>>>> Stashed changes
     while (t < 0.5)
     {
 >>>>>>> Stashed changes
@@ -208,7 +211,11 @@ int main ()
         cel = std::abs( max_vel);
         dt = 0.01 *  data.hx / (1e-4 + cel); //0.2 *  data.hx / (1e-4 + cel);
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 	my_timer.toc ("update dt");
+=======
+        std::cout << "time = " << t << "  " << " dt = " <<  dt << std::endl;
+>>>>>>> Stashed changes
 =======
         std::cout << "time = " << t << "  " << " dt = " <<  dt << std::endl;
 >>>>>>> Stashed changes
