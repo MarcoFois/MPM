@@ -562,7 +562,7 @@ int main ()
 
       }
 
-    my_timer..print_report ();
+    my_timer.print_report ();
     //  ptcls.print<particles_t::output_format::csv>(std::cout);
 
     return 0;
