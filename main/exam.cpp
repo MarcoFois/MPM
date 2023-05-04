@@ -193,41 +193,18 @@ int main ()
     grid.vtk_export("GRID_forZ.vts", vars);
 
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-    while (t < 4)
-      {
-=======
-=======
->>>>>>> Stashed changes
+
     while (t < 0.5)
-    {
->>>>>>> Stashed changes
+        {
 
-	my_timer.tic ("update dt");
-        double max_vel_x = *std::max_element(ptcls.dprops["vpx"].begin(), ptcls.dprops["vpx"].end());
-        double max_vel_y = *std::max_element(ptcls.dprops["vpy"].begin(), ptcls.dprops["vpy"].end());
-        double max_vel = std::max(1+max_vel_x,1+max_vel_y);
-        cel = std::abs( max_vel);
-        dt = 0.01 *  data.hx / (1e-4 + cel); //0.2 *  data.hx / (1e-4 + cel);
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-	my_timer.toc ("update dt");
-=======
-        std::cout << "time = " << t << "  " << " dt = " <<  dt << std::endl;
->>>>>>> Stashed changes
-=======
-        std::cout << "time = " << t << "  " << " dt = " <<  dt << std::endl;
->>>>>>> Stashed changes
-
-	my_timer.tic ("save csv");
-        std::string filename = "nc_particles_";
-        filename = filename + std::to_string (it++);
-        filename = filename + ".csv";
-        std::ofstream OF (filename.c_str ());
-        ptcls.print<particles_t::output_format::csv>(OF);
-        OF.close ();
-	my_timer.toc ("save csv");
+    	my_timer.tic ("update dt");
+            double max_vel_x = *std::max_element(ptcls.dprops["vpx"].begin(), ptcls.dprops["vpx"].end());
+            double max_vel_y = *std::max_element(ptcls.dprops["vpy"].begin(), ptcls.dprops["vpy"].end());
+            double max_vel = std::max(1+max_vel_x,1+max_vel_y);
+            cel = std::abs( max_vel);
+            dt = 0.01 *  data.hx / (1e-4 + cel); //0.2 *  data.hx / (1e-4 + cel);
+    	my_timer.toc ("update dt");
+            std::cout << "time = " << t << "  " << " dt = " <<  dt << std::endl;
 
 
 	//  (0)  CONNECTIVITY and BASIS FUNCTIONS
@@ -276,7 +253,7 @@ int main ()
 		}
 		} */
 	my_timer.toc ("step 0");
-	
+
 	// (1) PROJECTION FROM MP TO NODES (P2G)
 	my_timer.tic ("step 1");
         ptcls.p2g (vars,std::vector<std::string>{"Mp","mom_px","mom_py"},
@@ -285,7 +262,7 @@ int main ()
 		    std::vector<std::string>{"dZxp"},
 		    std::vector<std::string>{"dZyp"});
 	my_timer.toc ("step 1");
-		
+
 	// (2)  EXTERNAL FORCES ON VERTICES (P2G)
 	my_timer.tic ("step 2");
 	for (auto icell = grid.begin_cell_sweep ();
@@ -332,7 +309,7 @@ int main ()
 	//   ptcls.p2g (vars,std::vector<std::string>{"F_ext_px","F_ext_py"},
 	//        std::vector<std::string>{"F_ext_vx","F_ext_vy"});
 	my_timer.toc ("step 2");
-	
+
 	// (3) INTERNAL FORCES (p2gd) and MOMENTUM BALANCE
 	my_timer.tic ("step 3");
         ptcls.p2gd (vars, std::vector<std::string>{"F_11","F_21"},
@@ -366,7 +343,7 @@ int main ()
 
 	  }
 	my_timer.toc ("step 3");
-	
+
 	// (4)  COMPUTE NODAL ACCELERATIONS AND VELOCITIES
 	my_timer.tic ("step 4");
 	for (auto icell = grid.begin_cell_sweep ();
