@@ -190,6 +190,7 @@ int main ()
 
     ptcls.build_mass();
 
+
     grid.vtk_export("GRID_forZ.vts", vars);
 
 
