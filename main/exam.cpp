@@ -6,6 +6,7 @@
 #include <fstream>
 #include <cmath>
 #include <map>
+#include <timer.h>
 
 struct DATA
 {
