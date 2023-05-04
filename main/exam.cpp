@@ -193,13 +193,8 @@ int main ()
     grid.vtk_export("GRID_forZ.vts", vars);
 
 
-<<<<<<< Updated upstream
-    while (t < 4)
-      {
-=======
-    while (t < 0.5)
+while (t < 0.5)
     {
->>>>>>> Stashed changes
 
 	my_timer.tic ("update dt");
         double max_vel_x = *std::max_element(ptcls.dprops["vpx"].begin(), ptcls.dprops["vpx"].end());
@@ -207,11 +202,8 @@ int main ()
         double max_vel = std::max(1+max_vel_x,1+max_vel_y);
         cel = std::abs( max_vel);
         dt = 0.01 *  data.hx / (1e-4 + cel); //0.2 *  data.hx / (1e-4 + cel);
-<<<<<<< Updated upstream
 	my_timer.toc ("update dt");
-=======
         std::cout << "time = " << t << "  " << " dt = " <<  dt << std::endl;
->>>>>>> Stashed changes
 
 	my_timer.tic ("save csv");
         std::string filename = "nc_particles_";
