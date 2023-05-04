@@ -346,7 +346,7 @@ int main ()
 		auto iv = icell -> gt (inode);
 		vars["mom_vx"][iv] += dt * vars["Ftot_vx"][iv];
 		vars["mom_vy"][iv] += dt * vars["Ftot_vy"][iv];
-                //   vars["sum"][iv] += 1.;
+                
 	      }
 
 	  }
@@ -486,10 +486,10 @@ int main ()
 
 		      auto ip = ptcls.grd_to_ptcl.at(icell->get_global_cell_idx ())[gp];
 
-		      ptcls.dprops["F_11"][ip] =  .5 * 1000. * 9.81 *  (ptcls.dprops["hp"][ip] ) ;
+		      ptcls.dprops["F_11"][ip] =  .5 * data.rho * data.g *  (ptcls.dprops["hp"][ip] ) ;
 		      ptcls.dprops["F_12"][ip] = 0.0;
 		      ptcls.dprops["F_21"][ip] = 0.0;
-		      ptcls.dprops["F_22"][ip] =  .5 * 1000. * 9.81 *   (ptcls.dprops["hp"][ip]  );
+		      ptcls.dprops["F_22"][ip] =  .5 * data.rho * data.g *   (ptcls.dprops["hp"][ip]  );
 		    }
 	      }
 
@@ -516,10 +516,6 @@ int main ()
 	      }
 
 	  }
-	/*    for (idx_t ip = 0; ip < num_particles; ++ip)
-	      {
-	      ptcls.dprops["hpZ"][ip] = ptcls.dprops["hp"][ip] + ptcls.dprops["Zp"][ip];
-	      } */
 
 	for (idx_t ip = 0; ip < num_particles; ++ip)
 	  {
@@ -532,25 +528,6 @@ int main ()
 						data.rho * data.g * norm_v[ip] / data.xi) * ptcls.dprops["vpy"][ip] ;
 	  }
 
-
-
-	/*      for (auto icell = grid.begin_cell_sweep ();
-                icell != grid.end_cell_sweep (); ++icell)
-		{
-		for (auto inode = 0; inode < quadgrid_t<std::vector<double>>::cell_t::nodes_per_cell; ++inode)
-		{
-
-		if (ptcls.grd_to_ptcl.count (icell->get_global_cell_idx ()) > 0)
-		for (auto ip = 0; ip < ptcls.grd_to_ptcl.at (icell->get_global_cell_idx ()).size (); ++ip)
-		{
-		auto gp = ptcls.grd_to_ptcl.at(icell->get_global_cell_idx ())[ip];
-
-		ptcls.dprops["hpZ"][gp] = ptcls.dprops["hp"][gp] + meanZ[icell];
-
-		}
-		}
-
-		} */
 
 	//        ptcls.p2g (Plotvars,std::vector<std::string>{"Mp","vpx","vpy","apx","apy"},
         //        std::vector<std::string>{"rho_v","vvx","vvy","avx","avy"});
