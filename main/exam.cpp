@@ -208,6 +208,12 @@ int main ()
     	my_timer.toc ("update dt");
             std::cout << "time = " << t << "  " << " dt = " <<  dt << std::endl;
 
+            std::string filename = "nc_particles_";
+            filename = filename + std::to_string (it++);
+            filename = filename + ".csv";
+            std::ofstream OF (filename.c_str ());
+            ptcls.print<particles_t::output_format::csv>(OF);
+            OF.close ();
 
 	//  (0)  CONNECTIVITY and BASIS FUNCTIONS
 	my_timer.tic ("step 0");
