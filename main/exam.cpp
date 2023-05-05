@@ -121,7 +121,7 @@ int main ()
   double cel;
   double phi = 0.0;
   double atm = 100000.;
-  double fric_ang = 1. * M_PI / 40.;
+  double fric_ang = 1. * M_PI / 6.;
   double atan_grad_z;
   std::vector<double> norm_v (num_particles, 0.0);
 
@@ -196,7 +196,7 @@ int main ()
 
 
 
-    while (t < 0.5)
+    while (t < 1)
         {
 
     	my_timer.tic ("update dt");
@@ -204,7 +204,7 @@ int main ()
             double max_vel_y = *std::max_element(ptcls.dprops["vpy"].begin(), ptcls.dprops["vpy"].end());
             double max_vel = std::max(1+max_vel_x,1+max_vel_y);
             cel = std::abs( max_vel);
-            dt = 0.01 *  data.hx / (1e-4 + cel); //0.2 *  data.hx / (1e-4 + cel);
+            dt = 0.03 *  data.hx / (1e-2 + cel); //0.2 *  data.hx / (1e-4 + cel);
     	my_timer.toc ("update dt");
             std::cout << "time = " << t << "  " << " dt = " <<  dt << std::endl;
 
