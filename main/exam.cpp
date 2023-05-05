@@ -286,9 +286,9 @@ int main ()
 		      auto gp = ptcls.grd_to_ptcl.at(icell->get_global_cell_idx ())[ip];
 
 
-		      ptcls.dprops["Fric_px"][gp] +=  -  ptcls.dprops["Ap"][gp] * ptcls.dprops["Fb_x"][gp];
+		      ptcls.dprops["Fric_px"][gp] =  -  ptcls.dprops["Ap"][gp] * ptcls.dprops["Fb_x"][gp];
 
-		      ptcls.dprops["Fric_py"][gp] +=    -   ptcls.dprops["Ap"][gp] *  ptcls.dprops["Fb_y"][gp];
+		      ptcls.dprops["Fric_py"][gp] =    -   ptcls.dprops["Ap"][gp] *  ptcls.dprops["Fb_y"][gp];
 		    }
 	      }
 
@@ -305,9 +305,9 @@ int main ()
 	      {
 		auto gv = icell -> gt (inode);
 
-		vars["F_ext_vx"][gv] -=  vars["Mv"][gv] *  9.81 * vars["dZdx"][gv] - vars["Fric_x"][gv]; // vars["dZdx"][gv]; // vars["dZdx"][gv]; //  dZdx[gv]  ; //-  ptcls.dprops["Ap"][gp] * ptcls.dprops["Fb_x"][gp];
+		vars["F_ext_vx"][gv] = -  vars["Mv"][gv] *  9.81 * vars["dZdx"][gv] - vars["Fric_x"][gv]; // vars["dZdx"][gv]; // vars["dZdx"][gv]; //  dZdx[gv]  ; //-  ptcls.dprops["Ap"][gp] * ptcls.dprops["Fb_x"][gp];
 
-		vars["F_ext_vy"][gv] -=  vars["Mv"][gv] *  9.81 *  vars["dZdy"][gv] - vars["Fric_y"][gv]; // vars["dZdy"][gv]; //  -   ptcls.dprops["Ap"][gp] *  ptcls.dprops["Fb_y"][gp];
+		vars["F_ext_vy"][gv] = -  vars["Mv"][gv] *  9.81 *  vars["dZdy"][gv] - vars["Fric_y"][gv]; // vars["dZdy"][gv]; //  -   ptcls.dprops["Ap"][gp] *  ptcls.dprops["Fb_y"][gp];
 
 	      }
 
@@ -346,7 +346,7 @@ int main ()
 		auto iv = icell -> gt (inode);
 		vars["mom_vx"][iv] += dt * vars["Ftot_vx"][iv];
 		vars["mom_vy"][iv] += dt * vars["Ftot_vy"][iv];
-                
+
 	      }
 
 	  }
@@ -360,11 +360,11 @@ int main ()
 	    for (auto inode = 0; inode < quadgrid_t<std::vector<double>>::cell_t::nodes_per_cell; ++inode)
 	      {
 		auto iv = icell -> gt (inode);
-		vars["avx"][iv] = vars["Mv"][iv] > 1e-7 ?  vars["Ftot_vx"][iv] / vars["Mv"][iv] : 0.0;
-		vars["avy"][iv] = vars["Mv"][iv] > 1e-7 ? vars[ "Ftot_vy"][iv] / vars["Mv"][iv] : 0.0;
+		vars["avx"][iv] = vars["Mv"][iv] > 1e-6 ?  vars["Ftot_vx"][iv] / vars["Mv"][iv] : 0.0;
+		vars["avy"][iv] = vars["Mv"][iv] > 1e-6 ? vars[ "Ftot_vy"][iv] / vars["Mv"][iv] : 0.0;
 
-		vars["vvx"][iv] = vars["Mv"][iv] > 1e-7 ?  vars["mom_vx"][iv] / vars["Mv"][iv] : 0.0;
-		vars["vvy"][iv]= vars["Mv"][iv] > 1e-7 ?  vars["mom_vy"][iv] / vars["Mv"][iv] : 0.0;
+		vars["vvx"][iv] = vars["Mv"][iv] > 1e-6 ?  vars["mom_vx"][iv] / vars["Mv"][iv] : 0.0;
+		vars["vvy"][iv]= vars["Mv"][iv] > 1e-6 ?  vars["mom_vy"][iv] / vars["Mv"][iv] : 0.0;
 	      }
 
 	  }
@@ -405,7 +405,7 @@ int main ()
 		   std::vector<std::string>{"vpx","vpy","apx","apy"});
 
 
-	for (auto icell = grid.begin_cell_sweep ();
+/*	for (auto icell = grid.begin_cell_sweep ();
 	     icell != grid.end_cell_sweep (); ++icell)
 	  {
 	    for (auto inode = 0; inode < quadgrid_t<std::vector<double>>::cell_t::nodes_per_cell; ++inode)
@@ -419,7 +419,7 @@ int main ()
 		    }
 	      }
 
-	  }
+	  } */
 
 
 
@@ -463,7 +463,7 @@ int main ()
 		      ptcls.dprops["mom_px"][ip] = ptcls.dprops["vpx"][ip] * ptcls.dprops["Mp"][ip];
 		      ptcls.dprops["mom_py"][ip] = ptcls.dprops["vpy"][ip] * ptcls.dprops["Mp"][ip];
 		      ptcls.dprops["Vp"][ip]  /=(1+dt * (ptcls.dprops["vpx_dx"][ip] + ptcls.dprops["vpy_dy"][ip]));
-
+          ptcls.dprops["Ap"][ip] = ptcls.dprops["Mp"][ip] / (data.rho * ptcls.dprops["hp"][ip]);
 		    }
 	      }
 
@@ -521,11 +521,11 @@ int main ()
 	  {
             norm_v[ip] = std::sqrt(ptcls.dprops["vpx"][ip] * ptcls.dprops["vpx"][ip] + ptcls.dprops["vpy"][ip] * ptcls.dprops["vpy"][ip] );
 
-            ptcls.dprops["Fb_x"][ip] = - 0.5 * ((atm + data.rho * ptcls.dprops["hp"][ip] * data.g) * std::tan(fric_ang) / (norm_v[ip] + 0.0001) +
-						data.rho * data.g * norm_v[ip] / data.xi) * ptcls.dprops["vpx"][ip]  ;
+            ptcls.dprops["Fb_x"][ip] = - ( data.rho * ptcls.dprops["hp"][ip] * data.g * std::tan(fric_ang)  +
+                                           data.rho * data.g * ptcls.dprops["vpx"][ip] * ptcls.dprops["vpx"][ip]  / data.xi) * ptcls.dprops["vpx"][ip] / (norm_v[ip] + 0.001) ;
 
-            ptcls.dprops["Fb_y"][ip] = - 0.5 * ((atm + data.rho * ptcls.dprops["hp"][ip] * data.g) * std::tan(fric_ang) /( norm_v[ip] + 0.0001) +
-						data.rho * data.g * norm_v[ip] / data.xi) * ptcls.dprops["vpy"][ip] ;
+            ptcls.dprops["Fb_y"][ip] = - ( data.rho * ptcls.dprops["hp"][ip] * data.g * std::tan(fric_ang)  +
+                                           data.rho * data.g * ptcls.dprops["vpy"][ip] * ptcls.dprops["vpy"][ip]  / data.xi)  * ptcls.dprops["vpy"][ip] / (norm_v[ip] + 0.001) ;
 	  }
 
 
