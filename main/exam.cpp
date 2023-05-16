@@ -27,9 +27,7 @@ struct DATA
   double T;
   double rho;
   std::vector<double> Vp;
-  std::vector<double> bound;
   double xi;
-  std::vector<double> meanZ;
   std::vector<double> Z;
   std::vector<double> dZdx;
   std::vector<double> dZdy;
@@ -55,9 +53,7 @@ from_json(const nlohmann::json &j, DATA &d)
   j.at("g").get_to(d.g);
   j.at("T").get_to(d.T);
   j.at("Vp").get_to(d.Vp);
-  j.at("bound").get_to(d.bound);
   j.at("xi").get_to(d.xi);
-  j.at("meanZ").get_to(d.meanZ);
   j.at("Z").get_to(d.Z);
   j.at("dZdx").get_to(d.dZdx);
   j.at("dZdy").get_to(d.dZdy);
@@ -159,21 +155,6 @@ int main ()
     vars["dZdx"] = data.dZdx;
     vars["dZdy"] = data.dZdy;
 
-    /*      for (auto icell = grid.begin_cell_sweep ();
-	    icell != grid.end_cell_sweep (); ++icell)
-	    {
-	    for (auto iv = 0; iv < quadgrid_t<std::vector<double>>::cell_t::nodes_per_cell; ++iv)
-	    {
-	    auto gv = icell -> gt (iv);
-
-	    //     vars["dZdx"][gv] = - 0.30 - 2. * (icell -> p(0,gv) -50.) * std::exp(-(icell -> p(0,gv)-50.) * (icell -> p(0,gv)-50.)/7. - (icell -> p(1,gv)-10.) * (icell -> p(1,gv)-10.)/7.);//2. * std::cos(icell->p (0,gv)) * std::cos(0.5 * (icell -> p(1,gv)));
-	    //   vars["dZdy"][gv] = - 2. * (icell -> p(1,gv)-10.) * std::exp(-(icell -> p(0,gv)-50.) * (icell -> p(0,gv)-50.)/7. - (icell -> p(1,gv)-10.) * (icell -> p(1,gv)-10.)/7.);            // -2. * 0.5 * std::sin(icell -> p(0,gv)) * std::sin(0.5 * (icell-> p(1,gv)));
-	    //   vars["Z"][gv] = 50. - 0.30 * icell -> p(0,gv) + 7. * std::exp(-(icell -> p(0,gv)-50.) * (icell -> p(0,gv)-50.)/7. - (icell -> p(1,gv)-10.) * (icell -> p(1,gv)-10.)/7.); //3. + 2. * std::sin(icell -> p(0,gv)) * std::cos(0.5 * (icell -> p(1,gv)));
-	    vars["dZdx"][gv] = 2. * std::cos(icell->p (0,gv)) * std::cos(0.5 * (icell -> p(1,gv)));
-	    vars["dZdy"][gv] =  -2. * 0.5 * std::sin(icell -> p(0,gv)) * std::sin(0.5 * (icell-> p(1,gv)));
-	    vars["Z"][gv] = 3. + 2. * std::sin(icell -> p(0,gv)) * std::cos(0.5 * (icell -> p(1,gv)));
-	    }
-	    } */
 
     ptcls.g2p (vars,std::vector<std::string>{"Z"},
 	       std::vector<std::string>{"Zp"});
@@ -245,21 +226,6 @@ int main ()
         vars["dZdx"] = data.dZdx;
         vars["dZdy"] = data.dZdy;
 
-	/*      for (auto icell = grid.begin_cell_sweep ();
-		icell != grid.end_cell_sweep (); ++icell)
-		{
-		for (auto iv = 0; iv < quadgrid_t<std::vector<double>>::cell_t::nodes_per_cell; ++iv)
-		{
-		auto gv = icell -> gt (iv);
-
-		//     vars["dZdx"][gv] = - 0.30 - 2. * 17./7. * (icell -> p(0,gv) -50.) * std::exp(-(icell -> p(0,gv)-50.) * (icell -> p(0,gv)-50.)/7. - (icell -> p(1,gv)-10.) * (icell -> p(1,gv)-10.)/7.);//2. * std::cos(icell->p (0,gv)) * std::cos(0.5 * (icell -> p(1,gv)));
-		//     vars["dZdy"][gv] = - 2. * 17./7. * (icell -> p(1,gv)-10.) * std::exp(-(icell -> p(0,gv)-50.) * (icell -> p(0,gv)-50.)/7. - (icell -> p(1,gv)-10.) * (icell -> p(1,gv)-10.)/7.);            // -2. * 0.5 * std::sin(icell -> p(0,gv)) * std::sin(0.5 * (icell-> p(1,gv)));
-		//       vars["Z"][gv] = 50. - 0.30 * icell -> p(0,gv) + 17. * std::exp(-(icell -> p(0,gv)-50.) * (icell -> p(0,gv)-50.)/7. - (icell -> p(1,gv)-10.) * (icell -> p(1,gv)-10.)/7.); //3. + 2. * std::sin(icell -> p(0,gv)) * std::cos(0.5 * (icell -> p(1,gv)));
-		vars["dZdx"][gv] = 2. * std::cos(icell->p (0,gv)) * std::cos(0.5 * (icell -> p(1,gv)));
-		vars["dZdy"][gv] =  -2. * 0.5 * std::sin(icell -> p(0,gv)) * std::sin(0.5 * (icell-> p(1,gv)));
-		vars["Z"][gv] = 3. + 2. * std::sin(icell -> p(0,gv)) * std::cos(0.5 * (icell -> p(1,gv)));
-		}
-		} */
 	my_timer.toc ("step 0");
 
 	// (1) PROJECTION FROM MP TO NODES (P2G)
@@ -313,9 +279,6 @@ int main ()
 
 	  }
 
-
-	//   ptcls.p2g (vars,std::vector<std::string>{"F_ext_px","F_ext_py"},
-	//        std::vector<std::string>{"F_ext_vx","F_ext_vy"});
 	my_timer.toc ("step 2");
 
 	// (3) INTERNAL FORCES (p2gd) and MOMENTUM BALANCE
@@ -375,14 +338,14 @@ int main ()
 	for (auto icell = grid.begin_cell_sweep ();
 	     icell != grid.end_cell_sweep (); ++icell)
 	  {
-	    /* if ( (icell->e (2) == 2) || (icell->e(1)==3)  )
+	     if ( (icell->e (2) == 2) || (icell->e(1)==3)  )
 	       {
 	       for (idx_t inode = 0; inode < 4; ++inode)
 	       {
 	       vars["avx"][icell->gt(inode)] = 0.0;
 	       vars["vvx"][icell->gt(inode)] = 0.0;
 	       }
-	       } */
+	       }
 	    if ( (icell->e(0) == 0) || (icell->e(1)==1) )
 	      {
 		for (idx_t inode = 0; inode < 4; ++inode)
