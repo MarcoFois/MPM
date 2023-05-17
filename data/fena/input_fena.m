@@ -25,7 +25,7 @@ x = linspace (0, hx*ndivcols, ndivcols+1);
 Z = double (immagine_int);
 
 h = 0*Z;
-Ymin = 1500; Ymax = 1600; Xmin = 700; Xmax = 900;
+Ymin = 1400; Ymax = 1700; Xmin = 700; Xmax = 900;
 select = (Y>Ymin & Y<Ymax & X >Xmin & X < Xmax);
 
 h(select)= 101 - Z(select);
