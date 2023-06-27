@@ -6,7 +6,8 @@ clc;
 ndivrows = 200;
 ndivcols = 40;
 
-hx = hy = .5;
+hx = .5;
+hy = .5;
 
 y = linspace (0, hy*ndivrows, ndivrows+1);
 x = linspace (0, hx*ndivcols, ndivcols+1);
@@ -32,7 +33,7 @@ axis equal
 DX = .1; DY = .1;
 [xp, yp] = meshgrid (Xmin:DX:Xmax, Ymin:DY:Ymax);
 
-hp = interp2 (X, Y, h, xp, yp, 'nearest');
+hp = interp2 (X, Y, h, xp, yp, 'spline');
 hp = hp(:);
 xp = xp(:);
 yp = yp(:);
@@ -68,7 +69,7 @@ scatter3(xp(:),yp(:),hp(:))
 %% Constants
 g     = 9.81;
 xi    = 200;
-vis   = 50; 
+vis   = 50;
 ty    = 2000;
 T     = 10;
 
@@ -79,7 +80,7 @@ Msys  = sum (hp*DX*DY*rhosy);
 Mp    = Msys/nmp * ones(nmp, 1);
 Vp    = Mp./rhosy;
 Ap    = Vp./hp;
-vp    = zeros (nmp,2); 
+vp    = zeros (nmp,2);
 
 momp  = zeros (nmp,2);
 
