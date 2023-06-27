@@ -24,8 +24,8 @@ x = linspace (0, hx*ndivcols, ndivcols+1);
 [X, Y] = meshgrid (x, y);
 Z = double (immagine_int);
 
-h = 0*Z;
-Ymin = 1400; Ymax = 1700; Xmin = 700; Xmax = 900;
+h = 0*Z; %ymin 1400 ymax=1700   xmin = 700 xmax = 900
+Ymin = 1350; Ymax = 1450; Xmin = 700; Xmax = 900;
 select = (Y>Ymin & Y<Ymax & X >Xmin & X < Xmax);
 
 h(select)= 101 - Z(select);
@@ -70,7 +70,7 @@ scatter3(xp(:),yp(:),hp(:))
 %% Constants
 g     = 9.81;
 xi    = 200;
-vis   = 50; 
+vis   = 50;
 ty    = 2000;
 T     = 10;
 
@@ -81,7 +81,7 @@ Msys  = sum (hp*DX*DY*rhosy);
 Mp    = Msys/nmp * ones(nmp, 1);
 Vp    = Mp./rhosy;
 Ap    = Vp./hp;
-vp    = zeros (nmp,2); 
+vp    = zeros (nmp,2);
 
 momp  = zeros (nmp,2);
 
