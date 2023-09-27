@@ -35,7 +35,6 @@ int main ()
   ptcls.dprops["yp"] = data.y;
 
 
-
   for (idx_t ip = 0; ip < num_particles; ++ip)
     {
       ptcls.dprops["vpx_dx"][ip] = 0.0;
@@ -63,7 +62,6 @@ int main ()
   double fric_ang = 0.5 * M_PI / 6.;
   double atan_grad_z;
   std::vector<double> norm_v (num_particles, 0.0);
-
 
 
 
@@ -121,6 +119,7 @@ int main ()
 
 
     dt = 1.0e-5;
+    std::vector<idx_t> ordering (ptcls.num_particles);
     while (t < data.T)
         {
 
@@ -147,7 +146,21 @@ int main ()
 	my_timer.tic ("step 0");
         ptcls.init_particle_mesh ();
 
-
+        ordering.resize (ptcls.num_particles);
+	idx_t iordering = 0;
+	for (auto const & ii : ptcls.grd_to_ptcl) {
+	  for (auto const & jj : ii.second) {
+	    ordering[iordering++] = jj;
+	  }
+	}
+        ptcls.reorder (ordering);
+        dx_t iordering = 0;
+	for (auto & ii : ptcls.grd_to_ptcl) {
+	  for (auto & jj : ii.second) {
+	    jj = iordering++ = jj;
+	  }
+	}
+		
         for (auto &v : vars)
 	  {
             v.second.assign (v.second.size (),0.0);
@@ -457,8 +470,9 @@ int main ()
 	//  grid.vtk_export(filename.c_str(), Plotvars);
 	grid.vtk_export(filename.c_str(), vars);
         t +=dt;
-	my_timer.toc ("save vts");
-
+        my_timer.toc ("save vts");
+        my_timer.print_report ();
+		
       }
 
     my_timer.print_report ();
