@@ -154,7 +154,7 @@ int main ()
 	  }
 	}
         ptcls.reorder (ordering);
-        dx_t iordering = 0;
+        iordering = 0;
 	for (auto & ii : ptcls.grd_to_ptcl) {
 	  for (auto & jj : ii.second) {
 	    jj = iordering++ = jj;
