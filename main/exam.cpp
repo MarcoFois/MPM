@@ -425,23 +425,18 @@ int main ()
 	ptcls.g2p (vars,std::vector<std::string>{"Z"},
 		   std::vector<std::string>{"Zp"});
 
-	for (auto icell = grid.begin_cell_sweep ();
-	     icell != grid.end_cell_sweep (); ++icell)
-	  {
-	    for (auto inode = 0; inode < quadgrid_t<std::vector<double>>::cell_t::nodes_per_cell; ++inode)
-	      {
-		auto gv = icell -> gt (inode);
-		if (ptcls.grd_to_ptcl.count (icell->get_global_cell_idx ()) > 0)
-		  for (auto gp = 0; gp < ptcls.grd_to_ptcl.at (icell->get_global_cell_idx ()).size (); ++gp)
-		    {
-		      auto ip = ptcls.grd_to_ptcl.at(icell->get_global_cell_idx ())[gp];
-		      ptcls.dprops["hpZ"][ip] = ptcls.dprops["hp"][ip] + ptcls.dprops["Zp"][ip];
-
-		    }
-	      }
-
-	  }
-
+	for (auto icell = grid.begin_cell_sweep (); icell != grid.end_cell_sweep (); ++icell) {
+        if (ptcls.grd_to_ptcl.count (icell->get_global_cell_idx ()) > 0) {
+          for (auto inode = 0; inode < quadgrid_t<std::vector<double>>::cell_t::nodes_per_cell; ++inode) {
+              auto gv = icell -> gt (inode);
+              for (auto gp = 0; gp < ptcls.grd_to_ptcl.at (icell->get_global_cell_idx ()).size (); ++gp) {
+                  auto ip = ptcls.grd_to_ptcl.at(icell->get_global_cell_idx ())[gp];
+                  ptcls.dprops["hpZ"][ip] = ptcls.dprops["hp"][ip] + ptcls.dprops["Zp"][ip];
+              }
+          }
+        }
+    }
+            
 	for (idx_t ip = 0; ip < num_particles; ++ip)
 	  {
             norm_v[ip] = std::sqrt(ptcls.dprops["vpx"][ip] * ptcls.dprops["vpx"][ip] + ptcls.dprops["vpy"][ip] * ptcls.dprops["vpy"][ip] );
@@ -455,13 +450,13 @@ int main ()
 
 
 	//        ptcls.p2g (Plotvars,std::vector<std::string>{"Mp","vpx","vpy","apx","apy"},
-        //        std::vector<std::string>{"rho_v","vvx","vvy","avx","avy"});
+    //        std::vector<std::string>{"rho_v","vvx","vvy","avx","avy"});
 
 
-        ptcls.p2g (vars,std::vector<std::string>{"hp"},
-             std::vector<std::string>{"HV"});
-
-	my_timer.toc ("step 8");
+    my_timer.toc ("step 8");
+    ptcls.p2g (vars,std::vector<std::string>{"hp"}, std::vector<std::string>{"HV"});
+        
+	
 
 	my_timer.tic ("save vts");
         filename = "nc_grid_";
