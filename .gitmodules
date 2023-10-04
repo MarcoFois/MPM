@@ -1,6 +1,9 @@
 [submodule "quadgrid"]
 	path = quadgrid
-	url = git@github.com:carlodefalco/quadgrid.git
+	url = https://github.com/carlodefalco/quadgrid.git
 [submodule "timer"]
 	path = timer
-	url = git@github.com:carlodefalco/cdf_timer.git
+	url = https://github.com/carlodefalco/cdf_timer.git
+[submodule "json"]
+	path = json
+	url = https://github.com/nlohmann/json.git
