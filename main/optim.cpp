@@ -66,29 +66,6 @@ int main ()
   double atan_grad_z;
   std::vector<double> norm_v (num_particles, 0.0);
 
-  // double A = 3./2.;
-  // std::vector<double> ALF (num_particles, 0.0);
-  // std::vector<double> B (num_particles, -114./32.);
-  // double C = 65./32.;
-  // std::vector<double> s_xx (num_particles, 0.0);
-  // std::vector<double> s_xy (num_particles, 0.0);
-  // std::vector<double> s_yy (num_particles, 0.0);
-  // std::vector<double> D_xx (num_particles, 0.0);
-  // std::vector<double> D_xy (num_particles, 0.0);
-  // std::vector<double> D_xz (num_particles, 0.0);
-  // std::vector<double> D_yx (num_particles, 0.0);
-  // std::vector<double> D_yy (num_particles, 0.0);
-  // std::vector<double> D_yz (num_particles, 0.0);
-  // std::vector<double> D_zx (num_particles, 0.0);
-  // std::vector<double> D_zy (num_particles, 0.0);
-  // std::vector<double> D_zz (num_particles, 0.0);
-  // std::vector<double> invII (num_particles, 0.0);
-  // std::vector<double> Z1 (num_particles, 0.0);
-  // std::vector<double> Z2 (num_particles, 0.0);
-  // std::vector<double> ZZ (num_particles, 0.0);
-  // std::vector<double> sig_xx (num_particles, 0.0);
-  // std::vector<double> sig_xy (num_particles, 0.0);
-  // std::vector<double> sig_yy (num_particles, 0.0);
   double A{3./2.}, B{-114./32.}, C{65./32.};
   double nrm{0.0}, ALF{0.0}, Z1{0.0}, Z2{0.0}, ZZ{0.0};
   double s_xx{0.0}, s_xy{0.0}, s_yy{0.0};
@@ -182,17 +159,10 @@ int main ()
 	
         double hmean = *std::max_element (ptcls.dprops["hp"].begin(), ptcls.dprops["hp"].end());
         double max_vel = std::max(std::sqrt(data.g * hmean) + max_vel_x, std::sqrt(data.g * hmean) + max_vel_y);
-        //  double max_vel = std::max(1+max_vel_x,1+max_vel_y);
         cel = std::abs(max_vel);
 	
-        // double max_vel_x = *std::max_element(ptcls.dprops["vpx"].begin(), ptcls.dprops["vpx"].end());
-        // double max_vel_y = *std::max_element(ptcls.dprops["vpy"].begin(), ptcls.dprops["vpy"].end());
-        // double hmean = accumulate(ptcls.dprops["hp"].begin(), ptcls.dprops["hp"].end(), 0.0/ptcls.dprops["hp"].size());
-        // double max_vel = std::max(std::sqrt(data.g * hmean)+max_vel_x,-std::sqrt(data.g * hmean)+max_vel_y);
-        // //  double max_vel = std::max(1+max_vel_x,1+max_vel_y);
-        // cel = std::abs(max_vel);
         if (it > 0)
-          dt = 0.1 * data.hx / (1e-2 + cel); //0.2 *  data.hx / (1e-4 + cel);
+          dt = 0.1 * data.hx / (1e-2 + cel); 
         std::cout << "time = " << t << "  " << " dt = " <<  dt << std::endl;
 	std::cout << "cel = " << cel << std::endl;
         my_timer.toc ("update dt");
@@ -263,14 +233,14 @@ int main ()
         my_timer.tic ("step 2a");
 
         std::transform (ptcls.dprops["Mp"].begin (), ptcls.dprops["Mp"].end (), ptcls.dprops["dZxp"].begin (),ptcls.dprops["Fpx"].begin (),
-        [&] (double mp, double gzx) { return - data.g * mp * gzx; });
+			[&] (double mp, double gzx) { return - data.g * mp * gzx; });
         std::transform (ptcls.dprops["Mp"].begin (), ptcls.dprops["Mp"].end (), ptcls.dprops["dZyp"].begin (),ptcls.dprops["Fpy"].begin (),
-        [&] (double mp, double gzy) { return - data.g * mp * gzy; });
+			[&] (double mp, double gzy) { return - data.g * mp * gzy; });
 
         std::transform (ptcls.dprops["Ap"].begin (), ptcls.dprops["Ap"].end (), ptcls.dprops["Fb_x"].begin (),
-        ptcls.dprops["Fric_px"].begin (), std::multiplies<double> ());
+			ptcls.dprops["Fric_px"].begin (), std::multiplies<double> ());
         std::transform (ptcls.dprops["Ap"].begin (), ptcls.dprops["Ap"].end (), ptcls.dprops["Fb_y"].begin (),
-        ptcls.dprops["Fric_py"].begin (), std::multiplies<double> ());
+			ptcls.dprops["Fric_py"].begin (), std::multiplies<double> ());
         my_timer.toc ("step 2a");
 
 	my_timer.tic ("p2g");
@@ -278,47 +248,47 @@ int main ()
 	my_timer.toc ("p2g");
 	
 	my_timer.tic ("step 2b");
-       std::transform (vars["FPxv"].begin (), vars["FPxv"].end (), vars["Fric_x"].begin (),
-       vars["F_ext_vx"].begin (), std::plus<double> ());
-       std::transform (vars["FPyv"].begin (), vars["FPyv"].end (), vars["Fric_y"].begin (),
-       vars["F_ext_vy"].begin (), std::plus<double> ());
+	std::transform (vars["FPxv"].begin (), vars["FPxv"].end (), vars["Fric_x"].begin (),
+			vars["F_ext_vx"].begin (), std::plus<double> ());
+	std::transform (vars["FPyv"].begin (), vars["FPyv"].end (), vars["Fric_y"].begin (),
+			vars["F_ext_vy"].begin (), std::plus<double> ());
 
 
-    /*    for (auto icell = grid.begin_cell_sweep (); icell != grid.end_cell_sweep (); ++icell) {
-	  if (ptcls.grd_to_ptcl.count (icell->get_global_cell_idx ()) > 0) {
-	    for (auto inode = 0; inode < quadgrid_t<std::vector<double>>::cell_t::nodes_per_cell; ++inode) {
+	/*    for (auto icell = grid.begin_cell_sweep (); icell != grid.end_cell_sweep (); ++icell) {
+	      if (ptcls.grd_to_ptcl.count (icell->get_global_cell_idx ()) > 0) {
+	      for (auto inode = 0; inode < quadgrid_t<std::vector<double>>::cell_t::nodes_per_cell; ++inode) {
 	      auto gv = icell -> gt (inode);
 	      for (auto ip = 0; ip < ptcls.grd_to_ptcl.at (icell->get_global_cell_idx ()).size (); ++ip) {
-		auto gp = ptcls.grd_to_ptcl.at(icell->get_global_cell_idx ())[ip];
-		ptcls.dprops["Fric_px"][gp] =  - ptcls.dprops["Mp"][gp] *    9.81 * ptcls.dprops["dZxp"][gp]; // vars["dZdx"][gv]; // - ptcls.dprops["Ap"][gp] * ptcls.dprops["Fb_x"][gp] * 0.0 ;
-		ptcls.dprops["Fric_py"][gp] =    - ptcls.dprops["Mp"][gp] *    9.81 * ptcls.dprops["dZyp"][gp]; // -  ptcls.dprops["Ap"][gp] *  ptcls.dprops["Fb_y"][gp] * 0.0;
+	      auto gp = ptcls.grd_to_ptcl.at(icell->get_global_cell_idx ())[ip];
+	      ptcls.dprops["Fric_px"][gp] =  - ptcls.dprops["Mp"][gp] *    9.81 * ptcls.dprops["dZxp"][gp]; // vars["dZdx"][gv]; // - ptcls.dprops["Ap"][gp] * ptcls.dprops["Fb_x"][gp] * 0.0 ;
+	      ptcls.dprops["Fric_py"][gp] =    - ptcls.dprops["Mp"][gp] *    9.81 * ptcls.dprops["dZyp"][gp]; // -  ptcls.dprops["Ap"][gp] *  ptcls.dprops["Fb_y"][gp] * 0.0;
 	      }
-	    }
-	  }
-	} */
+	      }
+	      }
+	      } */
 
-    //  ptcls.p2g (vars,std::vector<std::string>{"Fric_px","Fric_py"},std::vector<std::string>{"Fric_x","Fric_y"});
-      //  ptcls.p2g (vars,std::vector<std::string>{"Fric_px","Fric_py"},
-                //   std::vector<std::string>{"F_ext_vx","F_ext_vy"});
-  /*    std::transform (vars["Mv"].begin (), vars["Mv"].end (), vars["dZdx"].begin (), vars["Fric_x"].begin (), vars["F_ext_vx"].begin (),
-      [&] (double mv, double gzx, double frx) { return - data.g * mv * gzx - frx; });
-      std::transform (vars["Mv"].begin (), vars["Mv"].end (), vars["dZdy"].begin (), vars["Fric_y"].begin (), vars["F_ext_vy"].begin (),
-      [&] (double mv, double gzy, double fry) { return - data.g * mv * gzy - fry; }); */
+	//  ptcls.p2g (vars,std::vector<std::string>{"Fric_px","Fric_py"},std::vector<std::string>{"Fric_x","Fric_y"});
+	//  ptcls.p2g (vars,std::vector<std::string>{"Fric_px","Fric_py"},
+	//   std::vector<std::string>{"F_ext_vx","F_ext_vy"});
+	/*    std::transform (vars["Mv"].begin (), vars["Mv"].end (), vars["dZdx"].begin (), vars["Fric_x"].begin (), vars["F_ext_vx"].begin (),
+	      [&] (double mv, double gzx, double frx) { return - data.g * mv * gzx - frx; });
+	      std::transform (vars["Mv"].begin (), vars["Mv"].end (), vars["dZdy"].begin (), vars["Fric_y"].begin (), vars["F_ext_vy"].begin (),
+	      [&] (double mv, double gzy, double fry) { return - data.g * mv * gzy - fry; }); */
 
-          /*   for (auto icell = grid.begin_cell_sweep ();
-                icell != grid.end_cell_sweep (); ++icell)
-                {
-                for (auto inode = 0; inode < quadgrid_t<std::vector<double>>::cell_t::nodes_per_cell; ++inode)
-                {
-                auto gv = icell -> gt (inode);
+	/*   for (auto icell = grid.begin_cell_sweep ();
+	     icell != grid.end_cell_sweep (); ++icell)
+	     {
+	     for (auto inode = 0; inode < quadgrid_t<std::vector<double>>::cell_t::nodes_per_cell; ++inode)
+	     {
+	     auto gv = icell -> gt (inode);
 
-                vars["F_ext_vx"][gv] = -  vars["Mv"][gv] *  9.81 * vars["dZdx"][gv] - vars["Fric_x"][gv]; // vars["dZdx"][gv]; // vars["dZdx"][gv]; //  dZdx[gv]  ; //-  ptcls.dprops["Ap"][gp] * ptcls.dprops["Fb_x"][gp];
+	     vars["F_ext_vx"][gv] = -  vars["Mv"][gv] *  9.81 * vars["dZdx"][gv] - vars["Fric_x"][gv]; // vars["dZdx"][gv]; // vars["dZdx"][gv]; //  dZdx[gv]  ; //-  ptcls.dprops["Ap"][gp] * ptcls.dprops["Fb_x"][gp];
 
-                vars["F_ext_vy"][gv] = -  vars["Mv"][gv] *  9.81 *  vars["dZdy"][gv] - vars["Fric_y"][gv]; // vars["dZdy"][gv]; //  -   ptcls.dprops["Ap"][gp] *  ptcls.dprops["Fb_y"][gp];
+	     vars["F_ext_vy"][gv] = -  vars["Mv"][gv] *  9.81 *  vars["dZdy"][gv] - vars["Fric_y"][gv]; // vars["dZdy"][gv]; //  -   ptcls.dprops["Ap"][gp] *  ptcls.dprops["Fb_y"][gp];
 
-                }
+	     }
 
-              } */
+	     } */
 
         my_timer.toc ("step 2b");
 
