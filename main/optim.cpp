@@ -382,12 +382,12 @@ int main ()
 	}
 
 	ptcls.dprops.at("hpZ").assign(ptcls.num_particles, 0.0);
-	//ptcls.dprops.at("Zp").assign(ptcls.num_particles, 0.0);
+	ptcls.dprops.at("Zp").assign(ptcls.num_particles, 0.0);
 	my_timer.toc ("step 8");
 
-	// my_timer.tic ("g2p");
-	// ptcls.g2p (vars, {"Z"}, {"Zp"});
-	// my_timer.toc ("g2p");
+	my_timer.tic ("g2p");
+	ptcls.g2p (vars, {"Z"}, {"Zp"});
+	my_timer.toc ("g2p");
 
 	my_timer.tic ("step 8b");
 	std::transform (ptcls.dprops["hp"].begin (), ptcls.dprops["hp"].end (), ptcls.dprops["Zp"].begin (), ptcls.dprops["hpZ"].begin (), std::plus<double> ());
