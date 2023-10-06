@@ -340,47 +340,61 @@ int main ()
 	// (8) UPDATE PARTICLE STRESS (USL)
         my_timer.tic ("step 8");
 
-	for (idx_t ip = 0; ip < ptcls.num_particles; ++ip) {
-	  nrm = std::sqrt(ptcls.dprops["vpx"][ip] * ptcls.dprops["vpx"][ip] + ptcls.dprops["vpy"][ip] * ptcls.dprops["vpy"][ip] );
+	{
 	  
-	  ALF = ptcls.dprops["hp"][ip] > 1.e-3
-	    ? (6. * 50. * nrm)/((ptcls.dprops["hp"][ip]+0.001) * 2000.)
-	    : 0.0;
-	  B = -114./32. - ALF;
-	  Z1 = (-B + std::sqrt(B * B - 4. * A * C))/(2. * A);
-	  Z2 = (-B - std::sqrt(B * B - 4. * A * C))/(2. * A);
-	  ZZ = std::abs (Z1 - .5) <= .5 ? Z1 : Z2;
+	  auto const & vpx = ptcls.dprops.at ("vpx");
+	  auto const & vpy = ptcls.dprops.at ("vpy");
+	  auto const & hp = ptcls.dprops.at ("hp");
+	  auto const & vpx_dx = ptcls.dprops.at ("vpx_dx");
+	  auto const & vpy_dy = ptcls.dprops.at ("vpy_dy");
+	  auto const & vpx_dy = ptcls.dprops.at ("vpx_dy");
+	  auto const & vpy_dx = ptcls.dprops.at ("vpy_dx");
+	  auto & F_11 = ptcls.dprops.at ("F_11");
+	  auto & F_12 = ptcls.dprops.at ("F_12");
+	  auto & F_21 = ptcls.dprops.at ("F_21");
+	  auto & F_22 = ptcls.dprops.at ("F_22");
+	  
+	  for (idx_t ip = 0; ip < ptcls.num_particles; ++ip) {
+	    nrm = std::sqrt(vpx[ip] * vpx[ip] +vpy[ip] * vpy[ip] );
+	  
+	    ALF = ptcls.dprops["hp"][ip] > 1.e-3
+	      ? (6. * 50. * nrm)/((hp[ip]+0.001) * 2000.)
+	      : 0.0;
+	    B = -114./32. - ALF;
+	    Z1 = (-B + std::sqrt(B * B - 4. * A * C))/(2. * A);
+	    Z2 = (-B - std::sqrt(B * B - 4. * A * C))/(2. * A);
+	    ZZ = std::abs (Z1 - .5) <= .5 ? Z1 : Z2;
  
-	  s_xx = ptcls.dprops["vpx_dx"][ip];
-	  s_xy = 0.5 * (ptcls.dprops["vpx_dy"][ip] + ptcls.dprops["vpy_dx"][ip]);
-	  s_yy = ptcls.dprops["vpy_dy"][ip];
+	    s_xx = vpx_dx[ip];
+	    s_xy = 0.5 * (vpx_dy[ip] + vpy_dx[ip]);
+	    s_yy = vpy_dy[ip];
 
-	  D_xx = s_xx;
-	  D_yx = s_xy;
-	  D_zx = ptcls.dprops["hp"][ip] > 1.e-3 ? 0.5 * (3. / (2. + ZZ)) * (ptcls.dprops["vpx"][ip] / (ptcls.dprops["hp"][ip] + 0.001) ) : 0.0;
+	    D_xx = s_xx;
+	    D_yx = s_xy;
+	    D_zx = hp[ip] > 1.e-3 ? 0.5 * (3. / (2. + ZZ)) * (vpx[ip] / (hp[ip] + 0.001) ) : 0.0;
 
-	  D_xy = s_xy;
-	  D_yy = s_yy;
-	  D_zy = ptcls.dprops["hp"][ip] > 1.e-3 ? 0.5 * (3. / (2. + ZZ))  * (ptcls.dprops["vpy"][ip] / (ptcls.dprops["hp"][ip]+ 0.001) ) : 0.0;
+	    D_xy = s_xy;
+	    D_yy = s_yy;
+	    D_zy = hp[ip] > 1.e-3 ? 0.5 * (3. / (2. + ZZ))  * (vpy[ip] / (hp[ip]+ 0.001) ) : 0.0;
 
-	  D_xz =  0.0;
-	  D_yz =  0.0;
-	  D_zz = - (ptcls.dprops["vpx_dx"][ip] + ptcls.dprops["vpy_dy"][ip] );
+	    D_xz =  0.0;
+	    D_yz =  0.0;
+	    D_zz = - (vpx_dx[ip] + vpy_dy[ip] );
 
-	  invII = 0.5 * (D_xx * D_xx + D_yy * D_yy + D_zz * D_zz +
-			 D_xz * D_xz + D_yz * D_yz + D_xy * D_xy);
+	    invII = 0.5 * (D_xx * D_xx + D_yy * D_yy + D_zz * D_zz +
+			   D_xz * D_xz + D_yz * D_yz + D_xy * D_xy);
 
-	  sig_xx = invII != 0 ? (2000./std::sqrt(invII) + 2. * 50.) * D_xx : 0.0;
-	  sig_xy = invII != 0 ? (2000./std::sqrt(invII) + 2. * 50.) * D_xy : 0.0;
-	  sig_yy = invII != 0 ? (2000./std::sqrt(invII) + 2. * 50.) * D_yy : 0.0;
+	    sig_xx = invII != 0 ? (2000./std::sqrt(invII) + 2. * 50.) * D_xx : 0.0;
+	    sig_xy = invII != 0 ? (2000./std::sqrt(invII) + 2. * 50.) * D_xy : 0.0;
+	    sig_yy = invII != 0 ? (2000./std::sqrt(invII) + 2. * 50.) * D_yy : 0.0;
 
-	  ptcls.dprops["F_11"][ip] =  cc * sig_xx - .5 * data.rho * data.g *  (ptcls.dprops["hp"][ip]);
-	  ptcls.dprops["F_12"][ip] =  cc * sig_xy;
-	  ptcls.dprops["F_21"][ip] =  cc * sig_xy;
-	  ptcls.dprops["F_22"][ip] =  cc * sig_yy - .5 * data.rho * data.g *  (ptcls.dprops["hp"][ip]);
+	    F_11[ip] =  cc * sig_xx - .5 * data.rho * data.g *  (hp[ip]);
+	    F_12[ip] =  cc * sig_xy;
+	    F_21[ip] =  cc * sig_xy;
+	    F_22[ip] =  cc * sig_yy - .5 * data.rho * data.g *  (hp[ip]);
 	  
+	  }
 	}
-
 	ptcls.dprops.at("hpZ").assign(ptcls.num_particles, 0.0);
 	ptcls.dprops.at("Zp").assign(ptcls.num_particles, 0.0);
 	my_timer.toc ("step 8");
