@@ -133,26 +133,27 @@ int main ()
     vars["dZdx"] = data.dZdx;
     vars["dZdy"] = data.dZdy;
 
-
-    ptcls.g2p (vars,std::vector<std::string>{"Z"},
-               std::vector<std::string>{"Zp"});
+    my_timer.tic ("g2p");
+    ptcls.g2p (vars, {"Z"}, {"Zp"});
+    my_timer.toc ("g2p");
+    
     ptcls.dprops.at("dZxp").assign(ptcls.num_particles, 0.0);
     ptcls.dprops.at("dZyp").assign(ptcls.num_particles, 0.0);
-    ptcls.g2p (vars,std::vector<std::string>{"dZdx","dZdy"},
-               std::vector<std::string>{"dZxp","dZyp"});
 
-    for (idx_t ip = 0; ip < num_particles; ++ip)
-      {
-        ptcls.dprops["hpZ"][ip] = ptcls.dprops["hp"][ip] + ptcls.dprops["Zp"][ip];
-      }
+    my_timer.tic ("g2p");
+    ptcls.g2p (vars, {"dZdx","dZdy"}, {"dZxp","dZyp"});
+    my_timer.toc ("g2p");
+	
+    for (idx_t ip = 0; ip < num_particles; ++ip) {
+      ptcls.dprops["hpZ"][ip] = ptcls.dprops["hp"][ip] + ptcls.dprops["Zp"][ip];
+    }
 
-      for (idx_t ip = 0; ip<num_particles; ++ip)
-      {
-          ptcls.dprops["F_11"][ip] =   .5 * data.rho * data.g *   (ptcls.dprops["hp"][ip]   ) ;
-          ptcls.dprops["F_12"][ip] = 0.0;
-          ptcls.dprops["F_21"][ip] = 0.0;
-          ptcls.dprops["F_22"][ip] =  .5 * data.rho * data.g *   (ptcls.dprops["hp"][ip] );
-      }
+    for (idx_t ip = 0; ip<num_particles; ++ip)  {
+      ptcls.dprops["F_11"][ip] =   .5 * data.rho * data.g *   (ptcls.dprops["hp"][ip]   ) ;
+      ptcls.dprops["F_12"][ip] = 0.0;
+      ptcls.dprops["F_21"][ip] = 0.0;
+      ptcls.dprops["F_22"][ip] =  .5 * data.rho * data.g *   (ptcls.dprops["hp"][ip] );
+    }
 
     int it = 0;
 
@@ -239,8 +240,6 @@ int main ()
 	}
 
 
-
-
         ptcls.dprops.at("dZxp").assign(ptcls.num_particles, 0.0);
         ptcls.dprops.at("dZyp").assign(ptcls.num_particles, 0.0);
         vars["Z"] = data.Z;
@@ -250,17 +249,18 @@ int main ()
         my_timer.toc ("step 0");
 
         // (1) PROJECTION FROM MP TO NODES (P2G)
-        my_timer.tic ("step 1");
-        ptcls.p2g (vars,std::vector<std::string>{"Mp","mom_px","mom_py"},
-                   std::vector<std::string>{"Mv","mom_vx","mom_vy"});
-        ptcls.g2pd (vars,std::vector<std::string>{"Z"},
-                    std::vector<std::string>{"dZxp"},
-                    std::vector<std::string>{"dZyp"});
 
-        my_timer.toc ("step 1");
+	my_timer.tic ("p2g");	
+        ptcls.p2g (vars, {"Mp","mom_px","mom_py"}, {"Mv","mom_vx","mom_vy"});
+	my_timer.toc ("p2g");
+
+	my_timer.tic ("g2pd");
+        ptcls.g2pd (vars, {"Z"}, {"dZxp"}, {"dZyp"});
+        my_timer.toc ("g2pd");
+	
 
         // (2)  EXTERNAL FORCES ON VERTICES (P2G)
-        my_timer.tic ("step 2");
+        my_timer.tic ("step 2a");
 
         std::transform (ptcls.dprops["Mp"].begin (), ptcls.dprops["Mp"].end (), ptcls.dprops["dZxp"].begin (),ptcls.dprops["Fpx"].begin (),
         [&] (double mp, double gzx) { return - data.g * mp * gzx; });
@@ -271,10 +271,13 @@ int main ()
         ptcls.dprops["Fric_px"].begin (), std::multiplies<double> ());
         std::transform (ptcls.dprops["Ap"].begin (), ptcls.dprops["Ap"].end (), ptcls.dprops["Fb_y"].begin (),
         ptcls.dprops["Fric_py"].begin (), std::multiplies<double> ());
+        my_timer.toc ("step 2a");
 
-        ptcls.p2g (vars,std::vector<std::string>{"Fpx","Fpy","Fric_px","Fric_py"},
-        std::vector<std::string>{"FPxv","FPyv","Fric_x","Fric_y"});
-
+	my_timer.tic ("p2g");
+        ptcls.p2g (vars, {"Fpx","Fpy","Fric_px","Fric_py"}, {"FPxv","FPyv","Fric_x","Fric_y"});
+	my_timer.toc ("p2g");
+	
+	my_timer.tic ("step 2b");
        std::transform (vars["FPxv"].begin (), vars["FPxv"].end (), vars["Fric_x"].begin (),
        vars["F_ext_vx"].begin (), std::plus<double> ());
        std::transform (vars["FPyv"].begin (), vars["FPyv"].end (), vars["Fric_y"].begin (),
@@ -317,15 +320,14 @@ int main ()
 
               } */
 
-        my_timer.toc ("step 2");
+        my_timer.toc ("step 2b");
 
         // (3) INTERNAL FORCES (p2gd) and MOMENTUM BALANCE
+        my_timer.tic ("p2gd");
+        ptcls.p2gd (vars, {"F_11","F_21"}, {"F_12","F_22"}, "Vp", {"F_int_vx","F_int_vy"});
+        my_timer.toc ("p2gd");
+	
         my_timer.tic ("step 3");
-        ptcls.p2gd (vars, std::vector<std::string>{"F_11","F_21"},
-                    std::vector<std::string>{"F_12","F_22"},
-                    "Vp",std::vector<std::string>{"F_int_vx","F_int_vy"});
-
-
 
 	std::transform (vars["F_ext_vx"].begin (), vars["F_ext_vx"].end (), vars["F_int_vx"].begin (), vars["Ftot_vx"].begin (), std::minus<double> ());
 	std::transform (vars["F_ext_vy"].begin (), vars["F_ext_vy"].end (), vars["F_int_vy"].begin (), vars["Ftot_vy"].begin (), std::minus<double> ());
@@ -407,11 +409,14 @@ int main ()
         ptcls.dprops.at("vpy").assign(ptcls.num_particles, 0.0);
         ptcls.dprops.at("apx").assign(ptcls.num_particles, 0.0);
         ptcls.dprops.at("apy").assign(ptcls.num_particles, 0.0);
+	my_timer.toc ("step 6");
 
-        ptcls.g2p (vars,std::vector<std::string>{"vvx","vvy","avx","avy"},
-                   std::vector<std::string>{"vpx","vpy","apx","apy"});
-
-
+	my_timer.tic ("g2p");
+        ptcls.g2p (vars, {"vvx","vvy","avx","avy"}, {"vpx","vpy","apx","apy"});
+	my_timer.toc ("g2p");
+	
+	my_timer.tic ("step 6b");
+	
 	std::transform (ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (),  ptcls.dprops["apx"].begin (), ptcls.dprops["vpx"].begin (), [=] (double x, double y) { return x + dt * y; } );
 	std::transform (ptcls.dprops["vpy"].begin (), ptcls.dprops["vpy"].end (),  ptcls.dprops["apy"].begin (), ptcls.dprops["vpy"].begin (), [=] (double x, double y) { return x + dt * y; } );
         // for (auto icell = grid.begin_cell_sweep (); icell != grid.end_cell_sweep (); ++icell) {
@@ -443,24 +448,26 @@ int main ()
 	//   }
 	// }
 
-        my_timer.toc ("step 6");
+        my_timer.toc ("step 6b");
 
         // (7) COMPUTE HEIGHT WITH STRAIN (divergence of velocities)
-        my_timer.tic ("step 7");
+        my_timer.tic ("step 7a");
         ptcls.dprops.at("vpx_dx").assign(ptcls.num_particles, 0.0);
         ptcls.dprops.at("vpy_dy").assign(ptcls.num_particles, 0.0);
-        ptcls.g2pd (vars,std::vector<std::string>{"vvx","vvy"},
-                    std::vector<std::string>{"vpx_dx","vpy_dx"},
-                    std::vector<std::string>{"vpx_dy","vpy_dy"});
+	my_timer.toc ("step 7a");
 
-
+	my_timer.tic ("g2pd");        
+        ptcls.g2pd (vars, {"vvx","vvy"}, {"vpx_dx","vpy_dx"}, {"vpx_dy","vpy_dy"});
+	my_timer.toc ("g2pd");
+ 
+        my_timer.tic ("step 7");
 	std::transform (ptcls.dprops["vpx_dx"].begin (), ptcls.dprops["vpx_dx"].end (), ptcls.dprops["vpy_dy"].begin (), norm_v.begin (), std::plus<double> ());
 	std::transform (ptcls.dprops["hp"].begin (), ptcls.dprops["hp"].end (), norm_v.begin (), ptcls.dprops["hp"].begin (), [=] (double x, double y) { return x / (1 + dt * y); } );
 	std::transform (ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["Mp"].begin (), ptcls.dprops["mom_px"].begin (), std::multiplies<double> () );
 	std::transform (ptcls.dprops["vpy"].begin (), ptcls.dprops["vpy"].end (), ptcls.dprops["Mp"].begin (), ptcls.dprops["mom_py"].begin (), std::multiplies<double> () );
 	std::transform (ptcls.dprops["Vp"].begin (), ptcls.dprops["Vp"].end (), norm_v.begin (), ptcls.dprops["Vp"].begin (), [=] (double x, double y) { return x / (1 + dt * y); } );
-  std::transform (ptcls.dprops["Vp"].begin (), ptcls.dprops["Vp"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Ap"].begin (), std::divides<double> () );
-//	std::transform (ptcls.dprops["Mp"].begin (), ptcls.dprops["Mp"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Ap"].begin (), [&] (double x, double y) { return x / (data.rho * y); } );
+	std::transform (ptcls.dprops["Vp"].begin (), ptcls.dprops["Vp"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Ap"].begin (), std::divides<double> () );
+	//	std::transform (ptcls.dprops["Mp"].begin (), ptcls.dprops["Mp"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Ap"].begin (), [&] (double x, double y) { return x / (data.rho * y); } );
         // for (auto icell = grid.begin_cell_sweep (); icell != grid.end_cell_sweep (); ++icell) {
 	//   if (ptcls.grd_to_ptcl.count (icell->get_global_cell_idx ()) > 0) {
 	//     for (auto inode = 0; inode < quadgrid_t<std::vector<double>>::cell_t::nodes_per_cell; ++inode) {
@@ -576,9 +583,13 @@ my_timer.tic ("step 7b");
 
 	ptcls.dprops.at("hpZ").assign(ptcls.num_particles, 0.0);
 	ptcls.dprops.at("Zp").assign(ptcls.num_particles, 0.0);
-	ptcls.g2p (vars,std::vector<std::string>{"Z"},
-		   std::vector<std::string>{"Zp"});
+	my_timer.toc ("step 8");
 
+	my_timer.tic ("g2p");
+	ptcls.g2p (vars, {"Z"}, {"Zp"});
+	my_timer.toc ("g2p");
+
+	my_timer.tic ("step 8");
 	std::transform (ptcls.dprops["hp"].begin (), ptcls.dprops["hp"].end (), ptcls.dprops["Zp"].begin (), ptcls.dprops["hpZ"].begin (), std::plus<double> ());
 	
 	// for (idx_t ip = 0; ip < num_particles; ++ip)
@@ -671,9 +682,9 @@ my_timer.tic ("step 7b");
 
         my_timer.toc ("step 8");
 
-	my_timer.tic ("step 8b");
+	my_timer.tic ("p2g");
         ptcls.p2g (vars,std::vector<std::string>{"hp"}, std::vector<std::string>{"HV"});
-	my_timer.toc ("step 8b");
+	my_timer.toc ("p2g");
 
 
 	//        my_timer.tic ("save vts");
