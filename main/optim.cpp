@@ -113,14 +113,14 @@ int main ()
     my_timer.tic ("g2p");
     ptcls.g2p (vars, {"Z"}, {"Zp"});
     my_timer.toc ("g2p");
-    
+
     ptcls.dprops.at("dZxp").assign(ptcls.num_particles, 0.0);
     ptcls.dprops.at("dZyp").assign(ptcls.num_particles, 0.0);
 
     my_timer.tic ("g2p");
     ptcls.g2p (vars, {"dZdx","dZdy"}, {"dZxp","dZyp"});
     my_timer.toc ("g2p");
-	
+
     for (idx_t ip = 0; ip < num_particles; ++ip) {
       ptcls.dprops["hpZ"][ip] = ptcls.dprops["hp"][ip] + ptcls.dprops["Zp"][ip];
     }
@@ -142,27 +142,27 @@ int main ()
 
     dt = 1.0e-5;
     std::vector<idx_t> ordering (ptcls.num_particles);
-    while (t < data.T) 
+    while (t < data.T)
       {
 
         my_timer.tic ("update dt");
 
 	double max_vel_x = *std::max_element(ptcls.dprops["vpx"].begin(), ptcls.dprops["vpx"].end());
 	double min_vel_x = *std::min_element(ptcls.dprops["vpx"].begin(), ptcls.dprops["vpx"].end());
-	
+
 	max_vel_x = std::max (std::abs(max_vel_x), std::abs(min_vel_x));
-	
+
         double max_vel_y = *std::max_element(ptcls.dprops["vpy"].begin(), ptcls.dprops["vpy"].end());
 	double min_vel_y = *std::min_element(ptcls.dprops["vpy"].begin(), ptcls.dprops["vpy"].end());
-	
+
 	max_vel_y = std::max (std::abs(max_vel_y), std::abs(min_vel_y));
-	
+
         double hmean = *std::max_element (ptcls.dprops["hp"].begin(), ptcls.dprops["hp"].end());
         double max_vel = std::max(std::sqrt(data.g * hmean) + max_vel_x, std::sqrt(data.g * hmean) + max_vel_y);
         cel = std::abs(max_vel);
-	
+
         if (it > 0)
-          dt = 0.1 * data.hx / (1e-2 + cel); 
+          dt = 0.1 * data.hx / (1e-2 + cel);
         std::cout << "time = " << t << "  " << " dt = " <<  dt << std::endl;
 	std::cout << "cel = " << cel << std::endl;
         my_timer.toc ("update dt");
@@ -171,7 +171,7 @@ int main ()
         std::string filename = "nc_particles_";
         filename = filename + std::to_string (it++);
         filename = filename + ".csv";
-        if (it % 250 == 0)
+        if (it % 50 == 0)
         {
           std::ofstream OF (filename.c_str ());
           ptcls.print<particles_t::output_format::csv>(OF);
@@ -220,14 +220,14 @@ int main ()
 
         // (1) PROJECTION FROM MP TO NODES (P2G)
 
-	my_timer.tic ("p2g");	
+	my_timer.tic ("p2g");
         ptcls.p2g (vars, {"Mp","mom_px","mom_py"}, {"Mv","mom_vx","mom_vy"});
 	my_timer.toc ("p2g");
 
 	my_timer.tic ("g2pd");
         ptcls.g2pd (vars, {"Z"}, {"dZxp"}, {"dZyp"});
         my_timer.toc ("g2pd");
-	
+
 
         // (2)  EXTERNAL FORCES ON VERTICES (P2G)
         my_timer.tic ("step 2a");
@@ -245,7 +245,7 @@ int main ()
 	my_timer.tic ("p2g");
         ptcls.p2g (vars, {"Fpx","Fpy","Fric_px","Fric_py"}, {"FPxv","FPyv","Fric_x","Fric_y"});
 	my_timer.toc ("p2g");
-	
+
 	my_timer.tic ("step 2b");
 	std::transform (vars["FPxv"].begin (), vars["FPxv"].end (), vars["Fric_x"].begin (),
 			vars["F_ext_vx"].begin (), std::plus<double> ());
@@ -258,7 +258,7 @@ int main ()
         my_timer.tic ("p2gd");
         ptcls.p2gd (vars, {"F_11","F_21"}, {"F_12","F_22"}, "Vp", {"F_int_vx","F_int_vy"});
         my_timer.toc ("p2gd");
-	
+
         my_timer.tic ("step 3");
 
 	std::transform (vars["F_ext_vx"].begin (), vars["F_ext_vx"].end (), vars["F_int_vx"].begin (), vars["Ftot_vx"].begin (), std::minus<double> ());
@@ -276,7 +276,7 @@ int main ()
 	std::transform (vars["Ftot_vy"].begin (), vars["Ftot_vy"].end (), vars["Mv"].begin (), vars["avy"].begin (), [] (double x, double y) { return y > 1.e-6 ? x/y : 0.0; });
 	std::transform (vars["mom_vx"].begin (), vars["mom_vx"].end (), vars["Mv"].begin (), vars["vvx"].begin (), [] (double x, double y) { return y > 1.e-6 ? x/y : 0.0; });
 	std::transform (vars["mom_vy"].begin (), vars["mom_vy"].end (), vars["Mv"].begin (), vars["vvy"].begin (), [] (double x, double y) { return y > 1.e-6 ? x/y : 0.0; });
-	
+
         my_timer.toc ("step 4");
 
         // (5) BOUNDARY CONDITIONS - TO DO
@@ -295,12 +295,12 @@ int main ()
 	my_timer.tic ("g2p");
         ptcls.g2p (vars, {"vvx","vvy","avx","avy"}, {"vpx","vpy","apx","apy"});
 	my_timer.toc ("g2p");
-	
+
 	my_timer.tic ("step 6b");
-	
+
 	std::transform (ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (),  ptcls.dprops["apx"].begin (), ptcls.dprops["vpx"].begin (), [=] (double x, double y) { return x + dt * y; } );
 	std::transform (ptcls.dprops["vpy"].begin (), ptcls.dprops["vpy"].end (),  ptcls.dprops["apy"].begin (), ptcls.dprops["vpy"].begin (), [=] (double x, double y) { return x + dt * y; } );
-       
+
 	std::transform (ptcls.x.begin (), ptcls.x.end (),  ptcls.dprops["vpx"].begin (), ptcls.x.begin (), [=] (double x, double y) { return x + dt * y; } );
 	std::transform (ptcls.y.begin (), ptcls.y.end (),  ptcls.dprops["vpy"].begin (), ptcls.y.begin (), [=] (double x, double y) { return x + dt * y; } );
 
@@ -312,10 +312,10 @@ int main ()
         ptcls.dprops.at("vpy_dy").assign(ptcls.num_particles, 0.0);
 	my_timer.toc ("step 7a");
 
-	my_timer.tic ("g2pd");        
+	my_timer.tic ("g2pd");
         ptcls.g2pd (vars, {"vvx","vvy"}, {"vpx_dx","vpy_dx"}, {"vpx_dy","vpy_dy"});
 	my_timer.toc ("g2pd");
- 
+
         my_timer.tic ("step 7");
 	std::transform (ptcls.dprops["vpx_dx"].begin (), ptcls.dprops["vpx_dx"].end (), ptcls.dprops["vpy_dy"].begin (), norm_v.begin (), std::plus<double> ());
 	std::transform (ptcls.dprops["hp"].begin (), ptcls.dprops["hp"].end (), norm_v.begin (), ptcls.dprops["hp"].begin (), [=] (double x, double y) { return x / (1 + dt * y); } );
@@ -341,7 +341,7 @@ int main ()
         my_timer.tic ("step 8");
 
 	{
-	  
+
 	  auto const & vpx = ptcls.dprops.at ("vpx");
 	  auto const & vpy = ptcls.dprops.at ("vpy");
 	  auto const & hp = ptcls.dprops.at ("hp");
@@ -353,10 +353,10 @@ int main ()
 	  auto & F_12 = ptcls.dprops.at ("F_12");
 	  auto & F_21 = ptcls.dprops.at ("F_21");
 	  auto & F_22 = ptcls.dprops.at ("F_22");
-	  
+
 	  for (idx_t ip = 0; ip < ptcls.num_particles; ++ip) {
 	    nrm = std::sqrt(vpx[ip] * vpx[ip] +vpy[ip] * vpy[ip] );
-	  
+
 	    ALF = hp[ip] > 1.e-3
 	      ? (6. * 50. * nrm)/((hp[ip]+0.001) * 2000.)
 	      : 0.0;
@@ -364,7 +364,7 @@ int main ()
 	    Z1 = (-B + std::sqrt(B * B - 4. * A * C))/(2. * A);
 	    Z2 = (-B - std::sqrt(B * B - 4. * A * C))/(2. * A);
 	    ZZ = std::abs (Z1 - .5) <= .5 ? Z1 : Z2;
- 
+
 	    s_xx = vpx_dx[ip];
 	    s_xy = 0.5 * (vpx_dy[ip] + vpy_dx[ip]);
 	    s_yy = vpy_dy[ip];
@@ -392,7 +392,7 @@ int main ()
 	    F_12[ip] =  cc * sig_xy;
 	    F_21[ip] =  cc * sig_xy;
 	    F_22[ip] =  cc * sig_yy - .5 * data.rho * data.g *  (hp[ip]);
-	  
+
 	  }
 	}
 	ptcls.dprops.at("hpZ").assign(ptcls.num_particles, 0.0);
