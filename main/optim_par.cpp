@@ -1,7 +1,7 @@
 #include "counter.h"
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
-
+#include <oneapi/tbb/global_control.h>
 #include <fstream>
 #include <functional>
 #include <map>
@@ -18,6 +18,8 @@ cdf::timer::timer_t my_timer{};
 int main ()
 {
 
+  tbb::global_control(tbb::global_control::max_allowed_parallelism, 1);
+ 
   DATA data ("DATA.json");
 
   quadgrid_t<std::vector<double>> grid;
