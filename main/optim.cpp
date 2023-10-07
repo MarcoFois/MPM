@@ -357,7 +357,7 @@ int main ()
 	  for (idx_t ip = 0; ip < ptcls.num_particles; ++ip) {
 	    nrm = std::sqrt(vpx[ip] * vpx[ip] +vpy[ip] * vpy[ip] );
 	  
-	    ALF = ptcls.dprops["hp"][ip] > 1.e-3
+	    ALF = hp[ip] > 1.e-3
 	      ? (6. * 50. * nrm)/((hp[ip]+0.001) * 2000.)
 	      : 0.0;
 	    B = -114./32. - ALF;
