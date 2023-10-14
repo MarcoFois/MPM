@@ -218,13 +218,10 @@ int main ()
     int it = 0;
 
     ptcls.build_mass();
-
-
     grid.vtk_export("GRID_forZ.vts", vars);
-
-
     dt = 1.0e-5;
     std::vector<idx_t> ordering (ptcls.num_particles);
+    
     while (t < data.T) 
       {
 
@@ -266,21 +263,22 @@ int main ()
         my_timer.tic ("reorder");
         ptcls.init_particle_mesh ();
 
-        ordering.resize (ptcls.num_particles);
-        idx_t iordering = 0;
-        for (auto const & ii : ptcls.grd_to_ptcl) {
-          for (auto const & jj : ii.second) {
-            ordering[iordering++] = jj;
-          }
-        }
+        // ordering.resize (ptcls.num_particles);
+        // idx_t iordering = 0;
+        // for (auto const & ii : ptcls.grd_to_ptcl) {
+        //   for (auto const & jj : ii.second) {
+        //     ordering[iordering++] = jj;
+        //   }
+        // }
 
-        ptcls.reorder (ordering);
-	iordering = 0;
-        for (auto & ii : ptcls.grd_to_ptcl) {
-          for (auto & jj : ii.second) {
-            jj = iordering++;
-          }
-        }
+        // ptcls.reorder (ordering);
+	// iordering = 0;
+        // for (auto & ii : ptcls.grd_to_ptcl) {
+        //   for (auto & jj : ii.second) {
+        //     jj = iordering++;
+        //   }
+        // }
+	// ptcls.init_particle_mesh ();
 	my_timer.toc ("reorder");
 
 	my_timer.tic ("step 0");
@@ -378,7 +376,13 @@ int main ()
 	my_timer.tic ("g2p");
         ptcls.g2p (vars, {"vvx","vvy","avx","avy"}, {"vpx","vpy","apx","apy"});
 	my_timer.toc ("g2p");
-	
+	// if (it > 0) {
+	//   for (auto const & iiii : vars.at ("avx")) {
+	//     std::cout << iiii << std::endl;
+	//   }
+
+	//   assert (false);
+	// }
 	my_timer.tic ("step 6b");
 	
 	dpl::transform (policy, ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (),  ptcls.dprops["apx"].begin (), ptcls.dprops["vpx"].begin (), [=] (double x, double y) { return x + dt * y; } );
