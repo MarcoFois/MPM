@@ -1,9 +1,13 @@
 [submodule "quadgrid"]
 	path = quadgrid
 	url = https://github.com/carlodefalco/quadgrid.git
+	shallow = true
 [submodule "timer"]
 	path = timer
 	url = https://github.com/carlodefalco/cdf_timer.git
+	shallow = true
 [submodule "json"]
 	path = json
 	url = https://github.com/nlohmann/json.git
+	shallow = true
+	
