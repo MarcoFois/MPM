@@ -1,7 +1,11 @@
 #include "counter.h"
-#include <oneapi/dpl/algorithm>
-#include <oneapi/dpl/execution>
-#include <oneapi/tbb/global_control.h>
+#ifdef USE_DPL
+#  include <oneapi/dpl/algorithm>
+#  include <oneapi/dpl/execution>
+#  include <oneapi/tbb/global_control.h>
+#else
+#  include <execution>
+#endif
 #include <fstream>
 #include <functional>
 #include <map>
@@ -11,6 +15,16 @@
 #include <quadgrid_cpp.h>
 #include <timer.h>
 #include "mpm_data.h"
+
+#ifdef USE_DPL 
+using dpl::transform;
+using dpl::for_each;
+auto policy = dpl::execution::par;
+#else
+using std::transform;
+using std::for_each;
+auto policy = std::execution::par;
+#endif
 
 
 struct stress_tensor_t {
@@ -95,7 +109,7 @@ struct stress_tensor_t {
 
 using idx_t = quadgrid_t<std::vector<double>>::idx_t;
 cdf::timer::timer_t my_timer{};
-auto policy = std::execution::unseq;
+
 
 int main ()
 {
@@ -312,14 +326,14 @@ int main ()
 
         // (2)  EXTERNAL FORCES ON VERTICES (P2G)
         my_timer.tic ("step 2a");
-        dpl::transform (policy, ptcls.dprops["Mp"].begin (), ptcls.dprops["Mp"].end (), ptcls.dprops["dZxp"].begin (),ptcls.dprops["Fpx"].begin (),
+        transform (policy, ptcls.dprops["Mp"].begin (), ptcls.dprops["Mp"].end (), ptcls.dprops["dZxp"].begin (),ptcls.dprops["Fpx"].begin (),
 			[&] (double mp, double gzx) { return - data.g * mp * gzx; });
-        dpl::transform (policy, ptcls.dprops["Mp"].begin (), ptcls.dprops["Mp"].end (), ptcls.dprops["dZyp"].begin (),ptcls.dprops["Fpy"].begin (),
+        transform (policy, ptcls.dprops["Mp"].begin (), ptcls.dprops["Mp"].end (), ptcls.dprops["dZyp"].begin (),ptcls.dprops["Fpy"].begin (),
 			[&] (double mp, double gzy) { return - data.g * mp * gzy; });
 
-        dpl::transform (policy, ptcls.dprops["Ap"].begin (), ptcls.dprops["Ap"].end (), ptcls.dprops["Fb_x"].begin (),
+        transform (policy, ptcls.dprops["Ap"].begin (), ptcls.dprops["Ap"].end (), ptcls.dprops["Fb_x"].begin (),
 			ptcls.dprops["Fric_px"].begin (), std::multiplies<double> ());
-        dpl::transform (policy, ptcls.dprops["Ap"].begin (), ptcls.dprops["Ap"].end (), ptcls.dprops["Fb_y"].begin (),
+        transform (policy, ptcls.dprops["Ap"].begin (), ptcls.dprops["Ap"].end (), ptcls.dprops["Fb_y"].begin (),
 			ptcls.dprops["Fric_py"].begin (), std::multiplies<double> ());
         my_timer.toc ("step 2a");
 
@@ -328,9 +342,9 @@ int main ()
 	my_timer.toc ("p2g");
 	
 	my_timer.tic ("step 2b");
-	dpl::transform (policy, vars["FPxv"].begin (), vars["FPxv"].end (), vars["Fric_x"].begin (),
+	transform (policy, vars["FPxv"].begin (), vars["FPxv"].end (), vars["Fric_x"].begin (),
 			vars["F_ext_vx"].begin (), std::plus<double> ());
-	dpl::transform (policy, vars["FPyv"].begin (), vars["FPyv"].end (), vars["Fric_y"].begin (),
+	transform (policy, vars["FPyv"].begin (), vars["FPyv"].end (), vars["Fric_y"].begin (),
 			vars["F_ext_vy"].begin (), std::plus<double> ());
 
         my_timer.toc ("step 2b");
@@ -342,21 +356,21 @@ int main ()
 	
         my_timer.tic ("step 3");
 
-	dpl::transform (policy, vars["F_ext_vx"].begin (), vars["F_ext_vx"].end (), vars["F_int_vx"].begin (), vars["Ftot_vx"].begin (), std::minus<double> ());
-	dpl::transform (policy, vars["F_ext_vy"].begin (), vars["F_ext_vy"].end (), vars["F_int_vy"].begin (), vars["Ftot_vy"].begin (), std::minus<double> ());
+	transform (policy, vars["F_ext_vx"].begin (), vars["F_ext_vx"].end (), vars["F_int_vx"].begin (), vars["Ftot_vx"].begin (), std::minus<double> ());
+	transform (policy, vars["F_ext_vy"].begin (), vars["F_ext_vy"].end (), vars["F_int_vy"].begin (), vars["Ftot_vy"].begin (), std::minus<double> ());
 
-	dpl::transform (policy, vars["Ftot_vx"].begin (), vars["Ftot_vx"].end (), vars["Ftot_vx"].begin (), vars["mom_vx"].begin (), [=] (double x, double y) { return dt*x + y; });
-	dpl::transform (policy, vars["Ftot_vy"].begin (), vars["Ftot_vy"].end (), vars["Ftot_vy"].begin (), vars["mom_vy"].begin (), [=] (double x, double y) { return dt*x + y; });
+	transform (policy, vars["Ftot_vx"].begin (), vars["Ftot_vx"].end (), vars["Ftot_vx"].begin (), vars["mom_vx"].begin (), [=] (double x, double y) { return dt*x + y; });
+	transform (policy, vars["Ftot_vy"].begin (), vars["Ftot_vy"].end (), vars["Ftot_vy"].begin (), vars["mom_vy"].begin (), [=] (double x, double y) { return dt*x + y; });
 
         my_timer.toc ("step 3");
 
         // (4)  COMPUTE NODAL ACCELERATIONS AND VELOCITIES
         my_timer.tic ("step 4");
 
-	dpl::transform (policy, vars["Ftot_vx"].begin (), vars["Ftot_vx"].end (), vars["Mv"].begin (), vars["avx"].begin (), [] (double x, double y) { return y > 1.e-6 ? x/y : 0.0; });
-	dpl::transform (policy, vars["Ftot_vy"].begin (), vars["Ftot_vy"].end (), vars["Mv"].begin (), vars["avy"].begin (), [] (double x, double y) { return y > 1.e-6 ? x/y : 0.0; });
-	dpl::transform (policy, vars["mom_vx"].begin (), vars["mom_vx"].end (), vars["Mv"].begin (), vars["vvx"].begin (), [] (double x, double y) { return y > 1.e-6 ? x/y : 0.0; });
-	dpl::transform (policy, vars["mom_vy"].begin (), vars["mom_vy"].end (), vars["Mv"].begin (), vars["vvy"].begin (), [] (double x, double y) { return y > 1.e-6 ? x/y : 0.0; });
+	transform (policy, vars["Ftot_vx"].begin (), vars["Ftot_vx"].end (), vars["Mv"].begin (), vars["avx"].begin (), [] (double x, double y) { return y > 1.e-6 ? x/y : 0.0; });
+	transform (policy, vars["Ftot_vy"].begin (), vars["Ftot_vy"].end (), vars["Mv"].begin (), vars["avy"].begin (), [] (double x, double y) { return y > 1.e-6 ? x/y : 0.0; });
+	transform (policy, vars["mom_vx"].begin (), vars["mom_vx"].end (), vars["Mv"].begin (), vars["vvx"].begin (), [] (double x, double y) { return y > 1.e-6 ? x/y : 0.0; });
+	transform (policy, vars["mom_vy"].begin (), vars["mom_vy"].end (), vars["Mv"].begin (), vars["vvy"].begin (), [] (double x, double y) { return y > 1.e-6 ? x/y : 0.0; });
 	
         my_timer.toc ("step 4");
 
@@ -385,11 +399,11 @@ int main ()
 	// }
 	my_timer.tic ("step 6b");
 	
-	dpl::transform (policy, ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (),  ptcls.dprops["apx"].begin (), ptcls.dprops["vpx"].begin (), [=] (double x, double y) { return x + dt * y; } );
-	dpl::transform (policy, ptcls.dprops["vpy"].begin (), ptcls.dprops["vpy"].end (),  ptcls.dprops["apy"].begin (), ptcls.dprops["vpy"].begin (), [=] (double x, double y) { return x + dt * y; } );
+	transform (policy, ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (),  ptcls.dprops["apx"].begin (), ptcls.dprops["vpx"].begin (), [=] (double x, double y) { return x + dt * y; } );
+	transform (policy, ptcls.dprops["vpy"].begin (), ptcls.dprops["vpy"].end (),  ptcls.dprops["apy"].begin (), ptcls.dprops["vpy"].begin (), [=] (double x, double y) { return x + dt * y; } );
        
-	dpl::transform (policy, ptcls.x.begin (), ptcls.x.end (),  ptcls.dprops["vpx"].begin (), ptcls.x.begin (), [=] (double x, double y) { return x + dt * y; } );
-	dpl::transform (policy, ptcls.y.begin (), ptcls.y.end (),  ptcls.dprops["vpy"].begin (), ptcls.y.begin (), [=] (double x, double y) { return x + dt * y; } );
+	transform (policy, ptcls.x.begin (), ptcls.x.end (),  ptcls.dprops["vpx"].begin (), ptcls.x.begin (), [=] (double x, double y) { return x + dt * y; } );
+	transform (policy, ptcls.y.begin (), ptcls.y.end (),  ptcls.dprops["vpy"].begin (), ptcls.y.begin (), [=] (double x, double y) { return x + dt * y; } );
 
         my_timer.toc ("step 6b");
 
@@ -404,23 +418,23 @@ int main ()
 	my_timer.toc ("g2pd");
  
         my_timer.tic ("step 7");
-	dpl::transform (policy, ptcls.dprops["vpx_dx"].begin (), ptcls.dprops["vpx_dx"].end (), ptcls.dprops["vpy_dy"].begin (), norm_v.begin (), std::plus<double> ());
-	dpl::transform (policy, ptcls.dprops["hp"].begin (), ptcls.dprops["hp"].end (), norm_v.begin (), ptcls.dprops["hp"].begin (), [=] (double x, double y) { return x / (1 + dt * y); } );
-	dpl::transform (policy, ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["Mp"].begin (), ptcls.dprops["mom_px"].begin (), std::multiplies<double> () );
-	dpl::transform (policy, ptcls.dprops["vpy"].begin (), ptcls.dprops["vpy"].end (), ptcls.dprops["Mp"].begin (), ptcls.dprops["mom_py"].begin (), std::multiplies<double> () );
-	dpl::transform (policy, ptcls.dprops["Vp"].begin (), ptcls.dprops["Vp"].end (), norm_v.begin (), ptcls.dprops["Vp"].begin (), [=] (double x, double y) { return x / (1 + dt * y); } );
-	dpl::transform (policy, ptcls.dprops["Vp"].begin (), ptcls.dprops["Vp"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Ap"].begin (), std::divides<double> () );
+	transform (policy, ptcls.dprops["vpx_dx"].begin (), ptcls.dprops["vpx_dx"].end (), ptcls.dprops["vpy_dy"].begin (), norm_v.begin (), std::plus<double> ());
+	transform (policy, ptcls.dprops["hp"].begin (), ptcls.dprops["hp"].end (), norm_v.begin (), ptcls.dprops["hp"].begin (), [=] (double x, double y) { return x / (1 + dt * y); } );
+	transform (policy, ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["Mp"].begin (), ptcls.dprops["mom_px"].begin (), std::multiplies<double> () );
+	transform (policy, ptcls.dprops["vpy"].begin (), ptcls.dprops["vpy"].end (), ptcls.dprops["Mp"].begin (), ptcls.dprops["mom_py"].begin (), std::multiplies<double> () );
+	transform (policy, ptcls.dprops["Vp"].begin (), ptcls.dprops["Vp"].end (), norm_v.begin (), ptcls.dprops["Vp"].begin (), [=] (double x, double y) { return x / (1 + dt * y); } );
+	transform (policy, ptcls.dprops["Vp"].begin (), ptcls.dprops["Vp"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Ap"].begin (), std::divides<double> () );
         my_timer.toc ("step 7");
 
 	// (7b) UPDATE FRICTIONS
 	my_timer.tic ("step 7b");
-	dpl::transform (policy, ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["vpy"].begin (), norm_v.begin (), [] (double x, double y) { return std::sqrt (x*x + y*y); });
-	dpl::transform (policy, ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Fb_x"].begin (),
+	transform (policy, ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["vpy"].begin (), norm_v.begin (), [] (double x, double y) { return std::sqrt (x*x + y*y); });
+	transform (policy, ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Fb_x"].begin (),
 			[&] (double x, double y) { return - data.rho * data.g * ( y * std::tan(fric_ang) + x * x  / data.xi) * x; });
-	dpl::transform (policy, ptcls.dprops["Fb_x"].begin (), ptcls.dprops["Fb_x"].end (), norm_v.begin (), ptcls.dprops["Fb_x"].begin (), std::divides<double> ());
-	dpl::transform (policy, ptcls.dprops["vpy"].begin (), ptcls.dprops["vpy"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Fb_y"].begin (),
+	transform (policy, ptcls.dprops["Fb_x"].begin (), ptcls.dprops["Fb_x"].end (), norm_v.begin (), ptcls.dprops["Fb_x"].begin (), std::divides<double> ());
+	transform (policy, ptcls.dprops["vpy"].begin (), ptcls.dprops["vpy"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Fb_y"].begin (),
 			[&] (double x, double y) { return - data.rho * data.g * ( y * std::tan(fric_ang) + x * x  / data.xi) * x; });
-	dpl::transform (policy, ptcls.dprops["Fb_y"].begin (), ptcls.dprops["Fb_y"].end (), norm_v.begin (), ptcls.dprops["Fb_y"].begin (), std::divides<double> ());
+	transform (policy, ptcls.dprops["Fb_y"].begin (), ptcls.dprops["Fb_y"].end (), norm_v.begin (), ptcls.dprops["Fb_y"].begin (), std::divides<double> ());
 	my_timer.toc ("step 7b");
 
 
@@ -429,7 +443,7 @@ int main ()
 	
 	range<idx_t> rng(0, ptcls.num_particles);
 	stress_tensor_t st(ptcls, data);
-	dpl::for_each (policy, rng.begin (), rng.end (), st);
+	for_each (policy, rng.begin (), rng.end (), st);
 	
 	ptcls.dprops.at("hpZ").assign(ptcls.num_particles, 0.0);
 	ptcls.dprops.at("Zp").assign(ptcls.num_particles, 0.0);
@@ -440,7 +454,7 @@ int main ()
 	my_timer.toc ("g2p");
 
 	my_timer.tic ("step 8b");
-	dpl::transform (policy, ptcls.dprops["hp"].begin (), ptcls.dprops["hp"].end (), ptcls.dprops["Zp"].begin (), ptcls.dprops["hpZ"].begin (), std::plus<double> ());
+	transform (policy, ptcls.dprops["hp"].begin (), ptcls.dprops["hp"].end (), ptcls.dprops["Zp"].begin (), ptcls.dprops["hpZ"].begin (), std::plus<double> ());
         my_timer.toc ("step 8b");
 
 	my_timer.tic ("p2g");
