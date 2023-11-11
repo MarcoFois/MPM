@@ -26,6 +26,9 @@ struct DATA
   std::vector<double> Z;
   std::vector<double> dZdx;
   std::vector<double> dZdy;
+  double BINGHAM_ON;
+  double FRICTION_ON;
+  double CFL;
 
   DATA (const char* filename);
 
@@ -55,6 +58,9 @@ from_json (const nlohmann::json &j, DATA &d)
   j.at("Z").get_to(d.Z);
   j.at("dZdx").get_to(d.dZdx);
   j.at("dZdy").get_to(d.dZdy);
+  j.at("BINGHAM_ON").get_to(d.BINGHAM_ON);
+  j.at("FRICTION_ON").get_to(d.FRICTION_ON);
+  j.at("CFL").get_to(d.CFL);
 }
 
 DATA::DATA (const char* filename) {

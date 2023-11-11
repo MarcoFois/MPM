@@ -31,7 +31,7 @@ select = (Y>Ymin & Y<Ymax & X >Xmin & X < Xmax);
 h(select)= 101 - Z(select);
 h(h < 0) = 0;
 
-DX = 1; DY = 1;
+DX = 0.851; DY = 0.851;
 [xp, yp] = meshgrid (Xmin:DX:Xmax, Ymin:DY:Ymax);
 hp = interp2 (X, Y, h, xp, yp, 'spline');
 hp = hp(:);
@@ -76,12 +76,15 @@ T     = 10;
 
 %% Material point quantities initialization
 nmp   = numel(xp);
-rhosy = 1100.0;
+rhosy = 1291.0;
 Msys  = sum (hp*DX*DY*rhosy);
 Mp    = Msys/nmp * ones(nmp, 1);
 Vp    = Mp./rhosy;
 Ap    = Vp./hp;
 vp    = zeros (nmp,2);
+BINGHAM = 0.0;
+FRICTION = 0.0;
+CFL = 0.01;
 
 momp  = zeros (nmp,2);
 
@@ -112,7 +115,10 @@ DATA = struct (
 	   "Vp", Vp, ...
 	   "Z", Z, ...
 	   "dZdx", dZdx,
-	   "dZdy", dZdy
+	   "dZdy", dZdy,
+     "BINGHAM_ON", BINGHAM,
+     "FRICTION_ON", FRICTION,
+     "CFL", CFL
 	 );
 json = jsonencode(DATA);
 

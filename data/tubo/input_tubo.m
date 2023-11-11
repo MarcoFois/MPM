@@ -81,6 +81,9 @@ Mp    = Msys/nmp * ones(nmp, 1);
 Vp    = Mp./rhosy;
 Ap    = Vp./hp;
 vp    = zeros (nmp,2);
+BINGHAM = 0.0;
+FRICTION = 0.0;
+CFL = 0.1;
 
 momp  = zeros (nmp,2);
 
@@ -111,7 +114,10 @@ DATA = struct (
 	   "Vp", Vp, ...
 	   "Z", Z, ...
 	   "dZdx", dZdx,
-	   "dZdy", dZdy
+	   "dZdy", dZdy,
+     "BINGHAM_ON", BINGHAM,
+     "FRICTION_ON", FRICTION,
+     "CFL", CFL
 	 );
 json = jsonencode(DATA);
 

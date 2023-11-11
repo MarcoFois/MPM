@@ -68,7 +68,8 @@ struct stress_tensor_t {
     double nrm{0.0}, ALF{0.0}, Z1{0.0}, Z2{0.0}, ZZ{0.0};
     double s_xx{0.0}, s_xy{0.0}, s_yy{0.0};
     double D_xx{0.0}, D_yx{0.0}, D_zx{0.0}, D_xy{0.0}, D_yy{0.0}, D_zy{0.0}, D_xz{0.0}, D_yz{0.0}, D_zz{0.0};
-    double invII{0.0}, sig_yy{0.0}, sig_xy{0.0}, sig_xx{0.0}, cc{1.0};
+    double invII{0.0}, sig_yy{0.0}, sig_xy{0.0}, sig_xx{0.0};
+    double BING = data.BINGHAM_ON;
 
     nrm = std::sqrt(vpx[ip] * vpx[ip] +vpy[ip] * vpy[ip] );
 
@@ -103,10 +104,10 @@ struct stress_tensor_t {
     sig_xy = invII != 0 ? (2000./std::sqrt(invII) + 2. * 50.) * D_xy : 0.0;
     sig_yy = invII != 0 ? (2000./std::sqrt(invII) + 2. * 50.) * D_yy : 0.0;
 
-    F_11[ip] =  cc * sig_xx - .5 * data.rho * data.g *  (hp[ip]);
-    F_12[ip] =  cc * sig_xy;
-    F_21[ip] =  cc * sig_xy;
-    F_22[ip] =  cc * sig_yy - .5 * data.rho * data.g *  (hp[ip]);
+    F_11[ip] =  BING * sig_xx - .5 * data.rho * data.g *  (hp[ip]);
+    F_12[ip] =  BING * sig_xy;
+    F_21[ip] =  BING * sig_xy;
+    F_22[ip] =  BING * sig_yy - .5 * data.rho * data.g *  (hp[ip]);
 
   }
 
@@ -176,6 +177,7 @@ int main ()
   double fric_ang = 0.5 * M_PI / 6.;
   double atan_grad_z;
   std::vector<double> norm_v (num_particles, 0.0);
+  std::vector<double> div_vp (num_particles, 0.0);
 
 
   std::map<std::string, std::vector<double>>
@@ -265,7 +267,7 @@ int main ()
         cel = std::abs(max_vel);
 
         if (it > 0)
-          dt = 0.05 * data.hx / (1e-2 + cel);
+          dt = data.CFL * data.hx / (1e-2 + cel); //0.1
         std::cout << "time = " << t << "  " << " dt = " <<  dt << std::endl;
         std::cout << "cel = " << cel << std::endl;
         my_timer.toc ("update dt");
@@ -276,22 +278,22 @@ int main ()
         filename = filename + ".csv";
 #ifdef USE_COMPRESSION
 	filename = filename + ".gz";
-#endif	
+#endif
         if (it % 25 == 0)
           {
 #ifdef USE_COMPRESSION
 	    boost::iostreams::filtering_ostream OF;
 	    OF.push (boost::iostreams::gzip_compressor());
 	    OF.push (boost::iostreams::file_sink (filename));
-#else	    
+#else
             std::ofstream OF (filename.c_str ());
-#endif	    
+#endif
             ptcls.print<particles_t::output_format::csv>(OF);
 #ifdef USE_COMPRESSION
 	    boost::iostreams::close (OF);
-#else	    
+#else
             OF.close ();
-#endif 
+#endif
           }
         my_timer.toc ("save csv");
 
@@ -349,10 +351,10 @@ int main ()
         my_timer.tic ("step 2a");
         transform (policy, ptcls.dprops["Mp"].begin (), ptcls.dprops["Mp"].end (),
                    ptcls.dprops["dZxp"].begin (),ptcls.dprops["Fpx"].begin (),
-                   [&] (double mp, double gzx) { return - data.g * mp * gzx; });
+                   [&] (double mp, double gzx) { return  - data.g * mp * gzx; });
         transform (policy, ptcls.dprops["Mp"].begin (), ptcls.dprops["Mp"].end (),
                    ptcls.dprops["dZyp"].begin (),ptcls.dprops["Fpy"].begin (),
-                   [&] (double mp, double gzy) { return - data.g * mp * gzy; });
+                   [&] (double mp, double gzy) { return  - data.g * mp * gzy; });
 
         transform (policy, ptcls.dprops["Ap"].begin (), ptcls.dprops["Ap"].end (), ptcls.dprops["Fb_x"].begin (),
                    ptcls.dprops["Fric_px"].begin (), std::multiplies<double> ());
@@ -441,22 +443,22 @@ int main ()
         my_timer.toc ("g2pd");
 
         my_timer.tic ("step 7");
-        transform (policy, ptcls.dprops["vpx_dx"].begin (), ptcls.dprops["vpx_dx"].end (), ptcls.dprops["vpy_dy"].begin (), norm_v.begin (), std::plus<double> ());
-        transform (policy, ptcls.dprops["hp"].begin (), ptcls.dprops["hp"].end (), norm_v.begin (), ptcls.dprops["hp"].begin (), [=] (double x, double y) { return x / (1 + dt * y); } );
+        transform (policy, ptcls.dprops["vpx_dx"].begin (), ptcls.dprops["vpx_dx"].end (), ptcls.dprops["vpy_dy"].begin (), div_vp.begin (), std::plus<double> ());
+        transform (policy, ptcls.dprops["hp"].begin (), ptcls.dprops["hp"].end (), div_vp.begin (), ptcls.dprops["hp"].begin (), [=] (double x, double y) { return x / (1 + dt * y); } );
         transform (policy, ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["Mp"].begin (), ptcls.dprops["mom_px"].begin (), std::multiplies<double> () );
         transform (policy, ptcls.dprops["vpy"].begin (), ptcls.dprops["vpy"].end (), ptcls.dprops["Mp"].begin (), ptcls.dprops["mom_py"].begin (), std::multiplies<double> () );
-        transform (policy, ptcls.dprops["Vp"].begin (), ptcls.dprops["Vp"].end (), norm_v.begin (), ptcls.dprops["Vp"].begin (), [=] (double x, double y) { return x / (1 + dt * y); } );
+        transform (policy, ptcls.dprops["Vp"].begin (), ptcls.dprops["Vp"].end (), div_vp.begin (), ptcls.dprops["Vp"].begin (), [=] (double x, double y) { return x / (1 + dt * y); } );
         transform (policy, ptcls.dprops["Vp"].begin (), ptcls.dprops["Vp"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Ap"].begin (), std::divides<double> () );
         my_timer.toc ("step 7");
 
         // (7b) UPDATE FRICTIONS
         my_timer.tic ("step 7b");
         transform (policy, ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["vpy"].begin (), norm_v.begin (), [] (double x, double y) { return std::sqrt (x*x + y*y); });
-        transform (policy, ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Fb_x"].begin (),
-                   [&] (double x, double y) { return - data.rho * data.g * ( y * std::tan(fric_ang) + x * x  / data.xi) * x; });
+        transform (policy, ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["hp"].begin (),  ptcls.dprops["Fb_x"].begin (),
+                   [&] (double x, double y) { return  - data.FRICTION_ON * data.rho * data.g * ( y * std::tan(fric_ang) + x * x  / data.xi) * x; });
         transform (policy, ptcls.dprops["Fb_x"].begin (), ptcls.dprops["Fb_x"].end (), norm_v.begin (), ptcls.dprops["Fb_x"].begin (), std::divides<double> ());
-        transform (policy, ptcls.dprops["vpy"].begin (), ptcls.dprops["vpy"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Fb_y"].begin (),
-                   [&] (double x, double y) { return - data.rho * data.g * ( y * std::tan(fric_ang) + x * x  / data.xi) * x; });
+        transform (policy, ptcls.dprops["vpy"].begin (), ptcls.dprops["vpy"].end (), ptcls.dprops["hp"].begin (),  ptcls.dprops["Fb_y"].begin (),
+                   [&] (double x, double y) { return  - data.FRICTION_ON * data.rho * data.g * ( y * std::tan(fric_ang) + x * x  / data.xi) * x  ; });
         transform (policy, ptcls.dprops["Fb_y"].begin (), ptcls.dprops["Fb_y"].end (), norm_v.begin (), ptcls.dprops["Fb_y"].begin (), std::divides<double> ());
         my_timer.toc ("step 7b");
 
