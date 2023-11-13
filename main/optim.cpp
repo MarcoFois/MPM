@@ -70,7 +70,7 @@ int main ()
   double nrm{0.0}, ALF{0.0}, Z1{0.0}, Z2{0.0}, ZZ{0.0};
   double s_xx{0.0}, s_xy{0.0}, s_yy{0.0};
   double D_xx{0.0}, D_yx{0.0}, D_zx{0.0}, D_xy{0.0}, D_yy{0.0}, D_zy{0.0}, D_xz{0.0}, D_yz{0.0}, D_zz{0.0};
-  double invII{0.0}, sig_yy{0.0}, sig_xy{0.0}, sig_xx{0.0}, cc{1.0};
+  double invII{0.0}, sig_yy{0.0}, sig_xy{0.0}, sig_xx{0.0}, cc{0.0};
 
   std::map<std::string, std::vector<double>>
     vars{
@@ -162,7 +162,7 @@ int main ()
         cel = std::abs(max_vel);
 
         if (it > 0)
-          dt = 0.1 * data.hx / (1e-2 + cel);
+          dt = 0.01 * data.hx / (1e-2 + cel);
         std::cout << "time = " << t << "  " << " dt = " <<  dt << std::endl;
 	std::cout << "cel = " << cel << std::endl;
         my_timer.toc ("update dt");
@@ -282,6 +282,26 @@ int main ()
         // (5) BOUNDARY CONDITIONS - TO DO
         my_timer.tic ("step 5");
         /* We assume the slide will never reach the boundary and do nothing here! */
+        for (auto icell = grid.begin_cell_sweep ();
+            icell != grid.end_cell_sweep (); ++icell)
+            {
+              if ( (icell->e (2) == 2) || (icell->e(1)==3)  )
+              {
+                for (idx_t inode = 0; inode < 4; ++inode)
+                {
+                  vars["avx"][icell->gt(inode)] = 0.0;
+                  vars["vvx"][icell->gt(inode)] = 0.0;
+                }
+              }
+              if ( (icell->e(0) == 0) || (icell->e(1)==1) )
+                {
+                 for (idx_t inode = 0; inode < 4; ++inode)
+                {
+                  vars["avy"][icell->gt(inode)] = 0.0;
+                  vars["vvy"][icell->gt(inode)] = 0.0;
+                }
+            }
+        }
         my_timer.toc ("step 5");
 
         // (6) RETURN TO POINTS (G2P) and UPDATE POS AND VEL ON PARTICLES
@@ -329,10 +349,10 @@ int main ()
 	my_timer.tic ("step 7b");
 	std::transform (ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["vpy"].begin (), norm_v.begin (), [] (double x, double y) { return std::sqrt (x*x + y*y); });
 	std::transform (ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Fb_x"].begin (),
-			[&] (double x, double y) { return - data.rho * data.g * ( y * std::tan(fric_ang) + x * x  / data.xi) * x; });
+			[&] (double x, double y) { return - 0.0 * data.rho * data.g * ( y * std::tan(fric_ang) + x * x  / data.xi) * x; });
 	std::transform (ptcls.dprops["Fb_x"].begin (), ptcls.dprops["Fb_x"].end (), norm_v.begin (), ptcls.dprops["Fb_x"].begin (), std::divides<double> ());
 	std::transform (ptcls.dprops["vpy"].begin (), ptcls.dprops["vpy"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Fb_y"].begin (),
-			[&] (double x, double y) { return - data.rho * data.g * ( y * std::tan(fric_ang) + x * x  / data.xi) * x; });
+			[&] (double x, double y) { return - 0.0 * data.rho * data.g * ( y * std::tan(fric_ang) + x * x  / data.xi) * x; });
 	std::transform (ptcls.dprops["Fb_y"].begin (), ptcls.dprops["Fb_y"].end (), norm_v.begin (), ptcls.dprops["Fb_y"].begin (), std::divides<double> ());
 	my_timer.toc ("step 7b");
 

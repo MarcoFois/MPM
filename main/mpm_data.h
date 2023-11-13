@@ -29,6 +29,7 @@ struct DATA
   double BINGHAM_ON;
   double FRICTION_ON;
   double CFL;
+  double BC_FLAG;
 
   DATA (const char* filename);
 
@@ -61,6 +62,7 @@ from_json (const nlohmann::json &j, DATA &d)
   j.at("BINGHAM_ON").get_to(d.BINGHAM_ON);
   j.at("FRICTION_ON").get_to(d.FRICTION_ON);
   j.at("CFL").get_to(d.CFL);
+  j.at("BC_FLAG").get_to(d.BC_FLAG);
 }
 
 DATA::DATA (const char* filename) {

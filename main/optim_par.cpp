@@ -71,6 +71,7 @@ struct stress_tensor_t {
     double invII{0.0}, sig_yy{0.0}, sig_xy{0.0}, sig_xx{0.0};
     double BING = data.BINGHAM_ON;
 
+
     nrm = std::sqrt(vpx[ip] * vpx[ip] +vpy[ip] * vpy[ip] );
 
     ALF = hp[ip] > 1.e-3
@@ -174,7 +175,7 @@ int main ()
   double cel;
   double phi = 0.0;
   double atm = 100000.;
-  double fric_ang = 0.5 * M_PI / 6.;
+  double fric_ang = 37.0 * M_PI / 180.;
   double atan_grad_z;
   std::vector<double> norm_v (num_particles, 0.0);
   std::vector<double> div_vp (num_particles, 0.0);
@@ -247,7 +248,7 @@ int main ()
     dt = 1.0e-5;
     std::vector<idx_t> ordering (ptcls.num_particles);
 
-    while (t < data.T)
+    while (t < data.T) // data.T
       {
 
         my_timer.tic ("update dt");
@@ -279,7 +280,7 @@ int main ()
 #ifdef USE_COMPRESSION
 	filename = filename + ".gz";
 #endif
-        if (it % 25 == 0)
+        if (t>1.198)//(it % 1000 == 0)
           {
 #ifdef USE_COMPRESSION
 	    boost::iostreams::filtering_ostream OF;
@@ -354,7 +355,7 @@ int main ()
                    [&] (double mp, double gzx) { return  - data.g * mp * gzx; });
         transform (policy, ptcls.dprops["Mp"].begin (), ptcls.dprops["Mp"].end (),
                    ptcls.dprops["dZyp"].begin (),ptcls.dprops["Fpy"].begin (),
-                   [&] (double mp, double gzy) { return  - data.g * mp * gzy; });
+                   [&] (double mp, double gzy) { return  - data.g * mp *  gzy; });
 
         transform (policy, ptcls.dprops["Ap"].begin (), ptcls.dprops["Ap"].end (), ptcls.dprops["Fb_x"].begin (),
                    ptcls.dprops["Fric_px"].begin (), std::multiplies<double> ());
@@ -392,16 +393,40 @@ int main ()
         // (4)  COMPUTE NODAL ACCELERATIONS AND VELOCITIES
         my_timer.tic ("step 4");
 
-        transform (policy, vars["Ftot_vx"].begin (), vars["Ftot_vx"].end (), vars["Mv"].begin (), vars["avx"].begin (), [] (double x, double y) { return y > 1.e-6 ? x/y : 0.0; });
-        transform (policy, vars["Ftot_vy"].begin (), vars["Ftot_vy"].end (), vars["Mv"].begin (), vars["avy"].begin (), [] (double x, double y) { return y > 1.e-6 ? x/y : 0.0; });
-        transform (policy, vars["mom_vx"].begin (), vars["mom_vx"].end (), vars["Mv"].begin (), vars["vvx"].begin (), [] (double x, double y) { return y > 1.e-6 ? x/y : 0.0; });
-        transform (policy, vars["mom_vy"].begin (), vars["mom_vy"].end (), vars["Mv"].begin (), vars["vvy"].begin (), [] (double x, double y) { return y > 1.e-6 ? x/y : 0.0; });
+        transform (policy, vars["Ftot_vx"].begin (), vars["Ftot_vx"].end (), vars["Mv"].begin (), vars["avx"].begin (), [] (double x, double y) { return y > 1.e-3 ? x/y : 0.0; });
+        transform (policy, vars["Ftot_vy"].begin (), vars["Ftot_vy"].end (), vars["Mv"].begin (), vars["avy"].begin (), [] (double x, double y) { return y > 1.e-3 ? x/y : 0.0; });
+        transform (policy, vars["mom_vx"].begin (), vars["mom_vx"].end (), vars["Mv"].begin (), vars["vvx"].begin (), [] (double x, double y) { return y > 1.e-3 ? x/y : 0.0; });
+        transform (policy, vars["mom_vy"].begin (), vars["mom_vy"].end (), vars["Mv"].begin (), vars["vvy"].begin (), [] (double x, double y) { return y > 1.e-3 ? x/y : 0.0; });
 
         my_timer.toc ("step 4");
 
         // (5) BOUNDARY CONDITIONS - TO DO
         my_timer.tic ("step 5");
         /* We assume the slide will never reach the boundary and do nothing here! */
+        if (data.BC_FLAG)
+        {
+          for (auto icell = grid.begin_cell_sweep ();
+              icell != grid.end_cell_sweep (); ++icell)
+              {
+                if ( (icell->e (0) == 2) || (icell->e(1)==3)  )
+                {
+                  for (idx_t inode = 0; inode < 4; ++inode)
+                  {
+                    vars["avx"][icell->gt(inode)] = 0.0;
+                    vars["vvx"][icell->gt(inode)] = 0.0;
+                  }
+                }
+                if ( (icell->e(0) == 0) || (icell->e(1)==1) )
+                  {
+                   for (idx_t inode = 0; inode < 4; ++inode)
+                  {
+                    vars["avy"][icell->gt(inode)] = 0.0;
+                    vars["vvy"][icell->gt(inode)] = 0.0;
+                  }
+              }
+          }
+        }
+
         my_timer.toc ("step 5");
 
         // (6) RETURN TO POINTS (G2P) and UPDATE POS AND VEL ON PARTICLES
@@ -499,7 +524,7 @@ int main ()
         // my_timer.toc ("save vts");
 
         //my_timer.print_report ();
-        if (it % 3000 == 0) break;
+      //  if (it % 3000 == 0) break;
 
       }
 

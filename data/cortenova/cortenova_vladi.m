@@ -165,7 +165,7 @@ vp    = zeros (nmp,2);
 BINGHAM = 1.0;
 FRICTION = 1.0;
 CFL = 0.1;
-
+BC_FLAG = 0.0;
 momp  = zeros (nmp,2);
 
 Fb(:,1) = zeros (nmp,1);
