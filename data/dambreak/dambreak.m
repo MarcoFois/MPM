@@ -5,15 +5,20 @@ clc;
 
 
 
-ndivrows = 20;
-ndivcols = 60;
+ndivrows = 60;
+ndivcols = 180;
 
-hx = .5;
-hy = .5;
+##hx = .5;
+##hy = .5;
 
-y = linspace (0, hy*ndivrows, ndivrows+1);
-x = linspace (0, hx*ndivcols, ndivcols+1);
+y = linspace (0, 10, ndivrows+1);
+x = linspace (0, 30, ndivcols+1);
 [X, Y] = meshgrid (x, y);
+
+
+
+hx = 30/ndivcols;
+hy = 10/ndivrows;
 
 Z = 0.0*X;
 
@@ -29,7 +34,7 @@ Z = 0.0*X;
 
 
 
-DX = 0.6; DY = 0.6;
+DX = 0.15; DY = 0.15;
 [xp, yp] = meshgrid (0:DX:15, 0:DY:10);
 
 %hp = interp2 (X, Y, h, xp, yp, 'linear');

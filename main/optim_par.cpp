@@ -235,10 +235,10 @@ int main ()
     }
 
     for (idx_t ip = 0; ip<num_particles; ++ip)  {
-      ptcls.dprops["F_11"][ip] =   .5 * data.rho * data.g *   (ptcls.dprops["hp"][ip]   ) ;
+      ptcls.dprops["F_11"][ip] =  - .5 * data.rho * data.g *   (ptcls.dprops["hp"][ip]   ) ;
       ptcls.dprops["F_12"][ip] = 0.0;
       ptcls.dprops["F_21"][ip] = 0.0;
-      ptcls.dprops["F_22"][ip] =  .5 * data.rho * data.g *   (ptcls.dprops["hp"][ip] );
+      ptcls.dprops["F_22"][ip] = - .5 * data.rho * data.g *   (ptcls.dprops["hp"][ip] );
     }
 
     int it = 0;
@@ -280,7 +280,7 @@ int main ()
 #ifdef USE_COMPRESSION
 	filename = filename + ".gz";
 #endif
-        if (t>1.198)//(it % 1000 == 0)
+        if (t>=0)//(it % 1000 == 0)
           {
 #ifdef USE_COMPRESSION
 	    boost::iostreams::filtering_ostream OF;
@@ -408,7 +408,7 @@ int main ()
           for (auto icell = grid.begin_cell_sweep ();
               icell != grid.end_cell_sweep (); ++icell)
               {
-                if ( (icell->e (0) == 2) || (icell->e(1)==3)  )
+                if ( (icell->e (2) == 2) || (icell->e(3)==3)  )
                 {
                   for (idx_t inode = 0; inode < 4; ++inode)
                   {
@@ -472,7 +472,7 @@ int main ()
         transform (policy, ptcls.dprops["hp"].begin (), ptcls.dprops["hp"].end (), div_vp.begin (), ptcls.dprops["hp"].begin (), [=] (double x, double y) { return x / (1 + dt * y); } );
         transform (policy, ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["Mp"].begin (), ptcls.dprops["mom_px"].begin (), std::multiplies<double> () );
         transform (policy, ptcls.dprops["vpy"].begin (), ptcls.dprops["vpy"].end (), ptcls.dprops["Mp"].begin (), ptcls.dprops["mom_py"].begin (), std::multiplies<double> () );
-        transform (policy, ptcls.dprops["Vp"].begin (), ptcls.dprops["Vp"].end (), div_vp.begin (), ptcls.dprops["Vp"].begin (), [=] (double x, double y) { return x / (1 + dt * y); } );
+      //  transform (policy, ptcls.dprops["Vp"].begin (), ptcls.dprops["Vp"].end (), div_vp.begin (), ptcls.dprops["Vp"].begin (), [=] (double x, double y) { return x / (1 + dt * y); } );
         transform (policy, ptcls.dprops["Vp"].begin (), ptcls.dprops["Vp"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Ap"].begin (), std::divides<double> () );
         my_timer.toc ("step 7");
 
