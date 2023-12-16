@@ -3,58 +3,50 @@ clear all;
 close all;
 clc;
 
+neley = 60;
+nelex = 200;
+
+##hx = 0.5;
+##hy = 0.5;
+
+y = linspace (0, 30,neley+1);
+x = linspace (0, 100, nelex+1);
 
 
-ndivrows = 60;
-ndivcols = 180;
+hx = 100/nelex;
+hy = 30/neley;
 
-##hx = .5;
-##hy = .5;
-
-y = linspace (0, 10, ndivrows+1);
-x = linspace (0, 30, ndivcols+1);
 [X, Y] = meshgrid (x, y);
 
+Z =ones(size(X));% 0*X;
 
 
-hx = 30/ndivcols;
-hy = 10/ndivrows;
-
-Z = 0.0*X;
-
-
-##
 ##h = 0*Z;
-##Ymin = 0; Ymax = 10; Xmin = 0; Xmax = 15;
-##select = (Y>=Ymin & Y<=Ymax & X >=Xmin & X < Xmax);
-##
-##h(select)= 10 - Z(select);
+Ymin = 0; Ymax = 30; Xmin = 0; Xmax = 100;
+##select = (Y>=Ymin & Y<=Ymax & X >=Xmin & X <= Xmax);
+####
+##h(select)= 5 - Z(select);
 ##h(h < 0) = 0;
+####
+##surf (X, Y, Z)
+##hold all
+##surf (X, Y, Z+h)
+##axis equal
 
 
+DX = .5; DY = .5;
+[xp, yp] = meshgrid (Xmin:DX:Xmax, Ymin:DY:Ymax);
 
-
-DX = 0.15; DY = 0.15;
-[xp, yp] = meshgrid (0:DX:15, 0:DY:10);
-
-%hp = interp2 (X, Y, h, xp, yp, 'linear');
-hp = 7.*ones(size(xp));
+%hp = interp2 (X, Y, h, xp, yp, 'spline');
+hp = 5.*ones(size(xp));
 hp = hp(:);
 xp = xp(:);
 yp = yp(:);
 
-surf (X, Y, Z)
-hold all
-scatter3(xp, yp, hp)
-axis equal
-xlabel('x')
-ylabel('y')
-zlabel('z')
-
-##hzero = find (hp <= 1);
-##hp(hzero) = [];
-##xp(hzero) = [];
-##yp(hzero) = [];
+hzero = find (hp <= 1);
+hp(hzero) = [];
+xp(hzero) = [];
+yp(hzero) = [];
 
 immagine_out = uint16(Z);
 imwrite (immagine_out, "sfondo.tif")
@@ -74,8 +66,7 @@ dZdy = gy(:);
 figure()
 mesh(X,Y,Zz)
 axis equal
-
-figure()
+hold on
 scatter3(xp(:),yp(:),hp(:))
 
 
@@ -84,7 +75,7 @@ g     = 9.81;
 xi    = 200;
 vis   = 50;
 ty    = 2000;
-T     = 1.2;
+T     = 10;
 
 %% Material point quantities initialization
 nmp   = numel(xp);
@@ -96,9 +87,8 @@ Ap    = Vp./hp;
 vp    = zeros (nmp,2);
 BINGHAM = 0.0;
 FRICTION = 0.0;
-CFL = 0.01;
+CFL = 0.001;
 BC_FLAG = 1.0;
-
 momp  = zeros (nmp,2);
 
 Fb(:,1) = zeros (nmp,1);
@@ -112,8 +102,8 @@ DATA = struct (
 	   "Ap", Ap, ...
 	   "vpx", vp(:,1), ...
 	   "vpy", vp(:,2), ...
-	   "Nex", ndivcols, ...
-	   "Ney", ndivrows, ...
+	   "Nex", nelex, ...
+	   "Ney", neley, ...
 	   "hx", hx, ...
 	   "hy", hy, ...
 	   "hp", hp, ...
