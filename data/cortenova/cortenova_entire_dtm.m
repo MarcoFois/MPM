@@ -76,27 +76,27 @@ h(h < 0) = 0;
 % %[xp, yp] = meshgrid (Xmin:DX:Xmax, Ymin:DY:Ymax);
 % %hp = interp2 (X, Y, h, xp, yp, 'spline');
 % %select = (Y>Ymin & Y<Ymax & X >Xmin & X < Xmax);
-% 
-% 
-% 
-% 
-% 
+%
+%
+%
+%
+%
 % hp = 38.*double(mask_in);
-% 
+%
 % %yy = linspace (0, hy*ndivrows, ndivrows+1);
 % %xx = linspace (0, hx*ndivcols, ndivcols+1);
-% 
+%
 % yy = linspace (0, hy*size(hp,1), size(hp,1));
 % xx = linspace (0, hx*size(hp,2), size(hp,2));
-% 
+%
 % [Xx, Yy] = meshgrid (xx, yy);
 % xp = Xx;
 % yp = Yy;
-% 
+%
 % hp = hp(:);
 % xp = xp(:);
 % yp = yp(:);
-% 
+%
 % hzero = find (hp < 38);
 % hp(hzero) = [];
 % xp(hzero) = [];
@@ -109,20 +109,22 @@ h(h < 0) = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 AA = mask_in; %double(mask_in);
 AA = AA(:,:,1);
-CC = imbinarize(AA);
+CC = im2bw(AA); % imbinarize(AA);
 Bbin = bwboundaries(CC);
 
 for k = 1:length(Bbin)
    boundary = Bbin{k};
 end
 
-figure()
-plot(boundary(:,2), boundary(:,1), 'rx-', 'LineWidth', 1.0)
+%figure()
+%plot(boundary(:,2), boundary(:,1), 'rx-', 'LineWidth', 1.0)
 
 % xL      = 0+(0.5*hl/nl):hl/nl:Lx;
 % yL      = 0+(0.5*hl/nl):hl/nl: Ly-(0.5*hl/nl);
-yy = linspace (0, 5*size(mask_in,1), 3650);
-xx = linspace (0, 5*size(mask_in,2), 3650);
+NPX = 3650;
+NPY = NPX;
+yy = linspace (0, 5*size(mask_in,1), NPX);
+xx = linspace (0, 5*size(mask_in,2), NPY);
 [xp,yp] = meshgrid(xx,yy);
 xp = xp(:);
 yp = yp(:);
@@ -131,8 +133,8 @@ nbound = numel(boundary(:,2));
 xp = 5.*[  xp(in)];
 yp = 5.*[ yp(in)];
 hp = 38.*ones(numel(xp),1);
-DX = 5*size(mask_in,1)/6000;
-DY = 5*size(mask_in,2)/6000;
+DX = 5*size(mask_in,1)/NPX;
+DY = 5*size(mask_in,2)/NPY;
 xp = xp + 1530;
 yp = yp + 1141;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -150,11 +152,12 @@ hold on
 scatter3(xp,yp,hp,10,'r')
 colormap('hsv');
 %}
-figure(1)
-surf(X,Y,zplot);
-hold on
-scatter3(xp,yp,hp,10,'r')
-colormap('hsv');
+
+%figure(1)
+%surf(X,Y,zplot);
+%hold on
+%scatter3(xp,yp,hp,10,'r')
+%colormap('hsv');
 
 
 %figure(2)
@@ -163,8 +166,9 @@ colormap('hsv');
 
 figure(3)
 scatter3(xp,yp,hp,10,'r')
-hold on
-surf(X,Y,dem,'LineStyle','none')
+view([0 90])
+%hold on
+%surf(X,Y,dem,'LineStyle','none')
 colormap("jet")
 
 %{
@@ -194,8 +198,8 @@ xlabel('x');
 ylabel('y');
 colormap('hsv');
 %}
-figure(5)
-scatter3(xp(:),yp(:),hp(:))
+%figure(5)
+%scatter3(xp(:),yp(:),hp(:))
 
 
 %% Constants
