@@ -167,9 +167,7 @@ colormap('hsv');
 figure(3)
 scatter3(xp,yp,hp,10,'r')
 view([0 90])
-%hold on
-%surf(X,Y,dem,'LineStyle','none')
-colormap("jet")
+
 
 %{
 figure(3);
