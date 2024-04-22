@@ -49,6 +49,7 @@ int main ()
       ptcls.dprops["dZyp"][ip] = 0.0;
       ptcls.dprops["Zp"][ip] = 0.0;
       ptcls.dprops["hpZ"][ip] = 0.0;
+
     }
 
 
@@ -85,6 +86,7 @@ int main ()
   std::vector<double> sig_xx (num_particles, 0.0);
   std::vector<double> sig_xy (num_particles, 0.0);
   std::vector<double> sig_yy (num_particles, 0.0);
+
 
 
 
@@ -139,10 +141,10 @@ int main ()
 
       for (idx_t ip = 0; ip<num_particles; ++ip)
   {
-    ptcls.dprops["F_11"][ip] =   .5 * data.rho * data.g *   (ptcls.dprops["hp"][ip]   ) ;
+    ptcls.dprops["F_11"][ip] = -  0.5 * data.rho * data.g *   (ptcls.dprops["hp"][ip]  ) ;
     ptcls.dprops["F_12"][ip] = 0.0;
     ptcls.dprops["F_21"][ip] = 0.0;
-    ptcls.dprops["F_22"][ip] =  .5 * data.rho * data.g *   (ptcls.dprops["hp"][ip] );
+    ptcls.dprops["F_22"][ip] = - 0.5 * data.rho * data.g *   (ptcls.dprops["hp"][ip] );
   }
 
     int it = 0;
@@ -159,14 +161,29 @@ int main ()
         {
 
   	my_timer.tic ("update dt");
-            double max_vel_x = *std::max_element(ptcls.dprops["vpx"].begin(), ptcls.dprops["vpx"].end());
+    /*      double max_vel_x = *std::max_element(ptcls.dprops["vpx"].begin(), ptcls.dprops["vpx"].end());
             double max_vel_y = *std::max_element(ptcls.dprops["vpy"].begin(), ptcls.dprops["vpy"].end());
             double hmean = accumulate(ptcls.dprops["hp"].begin(), ptcls.dprops["hp"].end(), 0.0/ptcls.dprops["hp"].size());
             double max_vel = std::max(std::sqrt(data.g * hmean)+max_vel_x,-std::sqrt(data.g * hmean)+max_vel_y);
           //  double max_vel = std::max(1+max_vel_x,1+max_vel_y);
+            cel = std::abs(max_vel); */
+
+           double max_vel_x = *std::max_element(ptcls.dprops["vpx"].begin(), ptcls.dprops["vpx"].end());
+            double min_vel_x = *std::min_element(ptcls.dprops["vpx"].begin(), ptcls.dprops["vpx"].end());
+
+            max_vel_x = std::max (std::abs(max_vel_x), std::abs(min_vel_x));
+
+            double max_vel_y = *std::max_element(ptcls.dprops["vpy"].begin(), ptcls.dprops["vpy"].end());
+            double min_vel_y = *std::min_element(ptcls.dprops["vpy"].begin(), ptcls.dprops["vpy"].end());
+
+            max_vel_y = std::max (std::abs(max_vel_y), std::abs(min_vel_y));
+
+            double hmean = *std::max_element (ptcls.dprops["hp"].begin(), ptcls.dprops["hp"].end());
+            double max_vel = std::max(std::sqrt(data.g * hmean) + max_vel_x, std::sqrt(data.g * hmean) + max_vel_y);
             cel = std::abs(max_vel);
+
 	    if (it > 0)
-	      dt = 0.8  * data.hx / (1e-2 + cel); // 0.7      0.2 *  data.hx / (1e-4 + cel);
+	      dt = 0.2* data.hx / (1e-2 + cel); // 0.7      0.2 *  data.hx / (1e-4 + cel);
 	      std::cout << "time = " << t << "  " << " dt = " <<  dt << std::endl;
     my_timer.toc ("update dt");
 
@@ -175,7 +192,7 @@ int main ()
             std::string filename = "nc_particles_";
             filename = filename + std::to_string (it++);
             filename = filename + ".csv";
-            if (it % 250 == 0)
+            if (t>=0.0)//(it % 50 == 0)
             {
               std::ofstream OF (filename.c_str ());
               ptcls.print<particles_t::output_format::csv>(OF);
@@ -187,7 +204,7 @@ int main ()
 	my_timer.tic ("reorder");
         ptcls.init_particle_mesh ();
 
-        ordering.resize (ptcls.num_particles);
+  /*      ordering.resize (ptcls.num_particles);
         idx_t iordering = 0;
         for (auto const & ii : ptcls.grd_to_ptcl) {
           for (auto const & jj : ii.second) {
@@ -202,7 +219,7 @@ int main ()
             jj = iordering++;
           }
         }
-    my_timer.toc ("reorder");
+    my_timer.toc ("reorder"); */
 
     my_timer.tic("step 0");
         for (auto &v : vars)
@@ -247,8 +264,8 @@ int main ()
 		  for (auto ip = 0; ip < ptcls.grd_to_ptcl.at (icell->get_global_cell_idx ()).size (); ++ip)
 		     {
 		      auto gp = ptcls.grd_to_ptcl.at(icell->get_global_cell_idx ())[ip];
-		      ptcls.dprops["Fric_px"][gp] = ptcls.dprops["Ap"][gp] * ptcls.dprops["Fb_x"][gp]  ; // - ptcls.dprops["Mp"][gp] *    9.81 * ptcls.dprops["dZxp"][gp] + ptcls.dprops["Ap"][gp] * ptcls.dprops["Fb_x"][gp]  ;
-		      ptcls.dprops["Fric_py"][gp] = ptcls.dprops["Ap"][gp] * ptcls.dprops["Fb_y"][gp]  ;//  - ptcls.dprops["Mp"][gp] *    9.81 * ptcls.dprops["dZyp"][gp]  + ptcls.dprops["Ap"][gp] *  ptcls.dprops["Fb_y"][gp]  ;
+		      ptcls.dprops["Fric_px"][gp] = 0.0 * ptcls.dprops["Ap"][gp] *  ptcls.dprops["Fb_x"][gp]  ; // - ptcls.dprops["Mp"][gp] *    9.81 * ptcls.dprops["dZxp"][gp] + ptcls.dprops["Ap"][gp] * ptcls.dprops["Fb_x"][gp]  ;
+		      ptcls.dprops["Fric_py"][gp] = 0.0 * ptcls.dprops["Ap"][gp] * ptcls.dprops["Fb_y"][gp]  ;//  - ptcls.dprops["Mp"][gp] *    9.81 * ptcls.dprops["dZyp"][gp]  + ptcls.dprops["Ap"][gp] *  ptcls.dprops["Fb_y"][gp]  ;
 		     }
 	     }
 
@@ -266,9 +283,9 @@ int main ()
 	      {
 		auto gv = icell -> gt (inode);
 
-		vars["F_ext_vx"][gv] = -  vars["Mv"][gv] *  9.81 * vars["dZdx"][gv] + vars["Fric_x"][gv]; // vars["dZdx"][gv]; // vars["dZdx"][gv]; //  dZdx[gv]  ; //-  ptcls.dprops["Ap"][gp] * ptcls.dprops["Fb_x"][gp];
+		vars["F_ext_vx"][gv] = -  vars["Mv"][gv] *  9.81 * 0.0 * vars["dZdx"][gv] + vars["Fric_x"][gv]; // vars["dZdx"][gv]; // vars["dZdx"][gv]; //  dZdx[gv]  ; //-  ptcls.dprops["Ap"][gp] * ptcls.dprops["Fb_x"][gp];
 
-		vars["F_ext_vy"][gv] = -  vars["Mv"][gv] *  9.81 *  vars["dZdy"][gv] + vars["Fric_y"][gv]; // vars["dZdy"][gv]; //  -   ptcls.dprops["Ap"][gp] *  ptcls.dprops["Fb_y"][gp];
+		vars["F_ext_vy"][gv] = -  vars["Mv"][gv] *  9.81 * 0.0 *  vars["dZdy"][gv] + vars["Fric_y"][gv]; // vars["dZdy"][gv]; //  -   ptcls.dprops["Ap"][gp] *  ptcls.dprops["Fb_y"][gp];
 
 	      }
 
@@ -296,6 +313,10 @@ int main ()
 
 	  }
 
+
+
+
+
         for (auto icell = grid.begin_cell_sweep ();
              icell != grid.end_cell_sweep (); ++icell)
 	  {
@@ -310,6 +331,8 @@ int main ()
 	  }
 	my_timer.toc ("step 3");
 
+
+
 	// (4)  COMPUTE NODAL ACCELERATIONS AND VELOCITIES
 	my_timer.tic ("step 4");
 	for (auto icell = grid.begin_cell_sweep ();
@@ -318,39 +341,45 @@ int main ()
 	    for (auto inode = 0; inode < quadgrid_t<std::vector<double>>::cell_t::nodes_per_cell; ++inode)
 	      {
 		auto iv = icell -> gt (inode);
-		vars["avx"][iv] = vars["Mv"][iv] > 1e-4 ?  vars["Ftot_vx"][iv] / vars["Mv"][iv] : 0.0;
-		vars["avy"][iv] = vars["Mv"][iv] > 1e-4 ? vars[ "Ftot_vy"][iv] / vars["Mv"][iv] : 0.0;
+		vars["avx"][iv] = vars["Mv"][iv] > 1e-8 ?  vars["Ftot_vx"][iv] / vars["Mv"][iv] : 0.0;
+		vars["avy"][iv] = vars["Mv"][iv] > 1e-8 ? vars[ "Ftot_vy"][iv] / vars["Mv"][iv] : 0.0;
 
-		vars["vvx"][iv] = vars["Mv"][iv] > 1e-4 ?  vars["mom_vx"][iv] / vars["Mv"][iv] : 0.0;
-		vars["vvy"][iv]= vars["Mv"][iv] > 1e-4 ?  vars["mom_vy"][iv] / vars["Mv"][iv] : 0.0;
+		vars["vvx"][iv] = vars["Mv"][iv] > 1e-8 ?  vars["mom_vx"][iv] / vars["Mv"][iv] : 0.0;
+		vars["vvy"][iv]= vars["Mv"][iv] > 1e-8 ?  vars["mom_vy"][iv] / vars["Mv"][iv] : 0.0;
 	      }
 
 	  }
 	my_timer.toc ("step 4");
 
-	// (5) BOUNDARY CONDITIONS - TO DO
-	my_timer.tic ("step 5");
-	for (auto icell = grid.begin_cell_sweep ();
-	     icell != grid.end_cell_sweep (); ++icell)
-	  {
-	     if ( (icell->e (2) == 2) || (icell->e(1)==3)  )
-	       {
-	       for (idx_t inode = 0; inode < 4; ++inode)
-	       {
-	       vars["avx"][icell->gt(inode)] = 0.0;
-	       vars["vvx"][icell->gt(inode)] = 0.0;
-	       }
-	       }
-	    if ( (icell->e(0) == 0) || (icell->e(1)==1) )
-	      {
-		for (idx_t inode = 0; inode < 4; ++inode)
-  	          {
-		    vars["avy"][icell->gt(inode)] = 0.0;
-		    vars["vvy"][icell->gt(inode)] = 0.0;
-  	          }
-	      }
-	  }
-	my_timer.toc ("step 5");
+  // (5) BOUNDARY CONDITIONS - TO DO
+ my_timer.tic ("step 5");
+  for (auto icell = grid.begin_cell_sweep ();
+      icell != grid.end_cell_sweep (); ++icell)
+   {
+        if ( (icell->e (2) == 2) || (icell->e(3)==3)  )
+          {
+          for (idx_t inode = 0; inode < 4; ++inode)
+          {
+                vars["avx"][icell->gt(inode)] = 0.0;
+              vars["vvx"][icell->gt(inode)] = 0.0;
+              //  vars["mom_vx"][icell->gt(inode)] = 0.0;
+          }
+          }
+       if ( (icell->e(0) == 0) || (icell->e(1)==1) )
+         {
+          for (idx_t inode = 0; inode < 4; ++inode)
+               {
+                 vars["avy"][icell->gt(inode)] = 0.0;
+                vars["vvy"][icell->gt(inode)] = 0.0;
+                //   vars["mom_vy"][icell->gt(inode)] = 0.0;
+               }
+         }
+      }
+
+
+ my_timer.toc ("step 5");
+
+
 
 	// (6) RETURN TO POINTS (G2P) and UPDATE POS AND VEL ON PARTICLES
 	my_timer.tic ("step 6");
@@ -362,7 +391,7 @@ int main ()
         ptcls.g2p (vars,std::vector<std::string>{"vvx","vvy","avx","avy"},
 		   std::vector<std::string>{"vpx","vpy","apx","apy"});
 
-/*
+
 
 	for (auto icell = grid.begin_cell_sweep ();
 	     icell != grid.end_cell_sweep (); ++icell)
@@ -379,7 +408,7 @@ int main ()
 	      }
 
 	  }
-*/
+
 
 
 	for (auto icell = grid.begin_cell_sweep ();
@@ -421,8 +450,9 @@ int main ()
 		      ptcls.dprops["hp"][ip] /= (1+dt * (ptcls.dprops["vpx_dx"][ip] + ptcls.dprops["vpy_dy"][ip]));
 		      ptcls.dprops["mom_px"][ip] = ptcls.dprops["vpx"][ip] * ptcls.dprops["Mp"][ip];
 		      ptcls.dprops["mom_py"][ip] = ptcls.dprops["vpy"][ip] * ptcls.dprops["Mp"][ip];
-		    //ptcls.dprops["Vp"][ip]   /=(1+dt * (ptcls.dprops["vpx_dx"][ip] + ptcls.dprops["vpy_dy"][ip]));
-         ptcls.dprops["Ap"][ip] =  ptcls.dprops["hp"][ip] >= 1.e-3 ? ptcls.dprops["Vp"][ip]/ptcls.dprops["hp"][ip] : 1.0; //     (1+dt * (ptcls.dprops["vpx_dx"][ip] + ptcls.dprops["vpy_dy"][ip])); // ptcls.dprops["Vp"][ip]/ptcls.dprops["hp"][ip]; //ptcls.dprops["Mp"][ip] / (data.rho * ptcls.dprops["hp"][ip]);
+		      ptcls.dprops["Ap"][ip]   /=(1+dt * (ptcls.dprops["vpx_dx"][ip] + ptcls.dprops["vpy_dy"][ip]));
+ptcls.dprops["Vp"][ip] = ptcls.dprops["hp"][ip] * ptcls.dprops["Ap"][ip];
+        // ptcls.dprops["Ap"][ip] =  ptcls.dprops["hp"][ip] >= 1.e-2 ? ptcls.dprops["Vp"][ip]/ptcls.dprops["hp"][ip] : ptcls.dprops["hp"][ip]; //     (1+dt * (ptcls.dprops["vpx_dx"][ip] + ptcls.dprops["vpy_dy"][ip])); // ptcls.dprops["Vp"][ip]/ptcls.dprops["hp"][ip]; //ptcls.dprops["Mp"][ip] / (data.rho * ptcls.dprops["hp"][ip]);
 		    }
 	      }
 
@@ -437,10 +467,10 @@ int main ()
     {
             norm_v[ip] = std::sqrt(ptcls.dprops["vpx"][ip] * ptcls.dprops["vpx"][ip] + ptcls.dprops["vpy"][ip] * ptcls.dprops["vpy"][ip] );
 
-            ptcls.dprops["Fb_x"][ip] = ptcls.dprops["hp"][ip] > 1.e-3 ?  - 2.5 * (  data.rho * ptcls.dprops["hp"][ip] * data.g * std::tan(fric_ang)  +
+            ptcls.dprops["Fb_x"][ip] = ptcls.dprops["hp"][ip] > 1.e-3 ?  - 0.0 * 2.5 * (  data.rho * ptcls.dprops["hp"][ip] * data.g * std::tan(fric_ang)  +
                                            data.rho * data.g * ptcls.dprops["vpx"][ip] * ptcls.dprops["vpx"][ip]  / 100.)* ptcls.dprops["vpx"][ip] / (norm_v[ip] + 0.001) : 0.0 ;
 
-            ptcls.dprops["Fb_y"][ip] = ptcls.dprops["hp"][ip] > 1.e-3 ? - 2.5 * (data.rho * ptcls.dprops["hp"][ip] * data.g * std::tan(fric_ang)  +
+            ptcls.dprops["Fb_y"][ip] = ptcls.dprops["hp"][ip] > 1.e-3 ? - 0.0 * 2.5 * (data.rho * ptcls.dprops["hp"][ip] * data.g * std::tan(fric_ang)  +
                                            data.rho * data.g * ptcls.dprops["vpy"][ip] * ptcls.dprops["vpy"][ip]  / 100.)  * ptcls.dprops["vpy"][ip] / (norm_v[ip] + 0.001) : 0.0 ;
     }
 
@@ -499,12 +529,12 @@ int main ()
           sig_xy[ip] = invII[ip] != 0 ? (2000./std::sqrt(invII[ip]) + 2. * 50.) * D_xy[ip] : 0.0;
           sig_yy[ip] = invII[ip] != 0 ? (2000./std::sqrt(invII[ip]) + 2. * 50.) * D_yy[ip] : 0.0;
 
-          double cc = 1.0;
+          double cc = 0.0;
 
-		      ptcls.dprops["F_11"][ip] =  cc * sig_xx[ip] -  .5 * data.rho * data.g *  (ptcls.dprops["hp"][ip] ) ;
-		      ptcls.dprops["F_12"][ip] =  cc * sig_xy[ip];
-		      ptcls.dprops["F_21"][ip] =  cc * sig_xy[ip];
-		      ptcls.dprops["F_22"][ip] =  cc * sig_yy[ip] - .5 * data.rho * data.g *   (ptcls.dprops["hp"][ip]  );
+		      ptcls.dprops["F_11"][ip] =  cc * sig_xx[ip] - 0.5 * data.rho * data.g *  (ptcls.dprops["hp"][ip]  ) ;
+		      ptcls.dprops["F_12"][ip] =  cc * sig_xy[ip] ;
+		      ptcls.dprops["F_21"][ip] =  cc * sig_xy[ip]  ;
+		      ptcls.dprops["F_22"][ip] =  cc * sig_yy[ip] - 0.5 * data.rho * data.g *   (ptcls.dprops["hp"][ip]    )   ;
 		    }
 	      }
 
@@ -535,8 +565,8 @@ int main ()
 
  my_timer.toc("step 8");
 
-	//        ptcls.p2g (Plotvars,std::vector<std::string>{"Mp","vpx","vpy","apx","apy"},
-        //        std::vector<std::string>{"rho_v","vvx","vvy","avx","avy"});
+	        ptcls.p2g (Plotvars,std::vector<std::string>{"Mp","vpx","vpy","apx","apy"},
+             std::vector<std::string>{"rho_v","vvx","vvy","avx","avy"},true);
 
  my_timer.tic("step 8b");
         ptcls.p2g (vars,std::vector<std::string>{"hp"}, std::vector<std::string>{"HV"});
@@ -547,7 +577,7 @@ int main ()
         filename = "nc_grid_";
         filename = filename + std::to_string (it);
       filename = filename + ".vts";
-	  //grid.vtk_export(filename.c_str(), Plotvars);
+	 // grid.vtk_export(filename.c_str(), Plotvars);
 	grid.vtk_export(filename.c_str(), vars);
         t +=dt;
 	my_timer.toc ("save vts");

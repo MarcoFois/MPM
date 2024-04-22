@@ -1,12 +1,66 @@
 
-#include <fstream>
-#include <map>
-#include <cmath>
 #include <iostream>
-#include <particles.h>
 #include <quadgrid_cpp.h>
+#include <particles.h>
+#include "json.hpp"
+#include <fstream>
+#include <cmath>
+#include <map>
 #include <timer.h>
-#include "mpm_data.h"
+
+struct DATA
+{
+  std::vector<double> x;
+  std::vector<double> y;
+  std::vector<double> Mp;
+  std::vector<double> Ap;
+  std::vector<double> vpx;
+  std::vector<double> vpy;
+  int Nex;
+  int Ney;
+  double hx;
+  double hy;
+  std::vector<double> hp;
+  std::vector<double> mom_px;
+  std::vector<double> mom_py;
+  double g;
+  double T;
+  double rho;
+  std::vector<double> Vp;
+  double xi;
+  std::vector<double> Z;
+  std::vector<double> dZdx;
+  std::vector<double> dZdy;
+
+};
+
+void
+from_json(const nlohmann::json &j, DATA &d)
+{
+  j.at("x").get_to(d.x);
+  j.at("y").get_to(d.y);
+  j.at("Mp").get_to(d.Mp);
+  j.at("Ap").get_to(d.Ap);
+  j.at("vpx").get_to(d.vpx);
+  j.at("vpy").get_to(d.vpy);
+  j.at("Nex").get_to(d.Nex);
+  j.at("Ney").get_to(d.Ney);
+  j.at("hx").get_to(d.hx);
+  j.at("hy").get_to(d.hy);
+  j.at("hp").get_to(d.hp);
+  j.at("mom_px").get_to(d.mom_px);
+  j.at("mom_py").get_to(d.mom_py);
+  j.at("rho").get_to(d.rho);
+  j.at("g").get_to(d.g);
+  j.at("T").get_to(d.T);
+  j.at("Vp").get_to(d.Vp);
+  j.at("xi").get_to(d.xi);
+  j.at("Z").get_to(d.Z);
+  j.at("dZdx").get_to(d.dZdx);
+  j.at("dZdy").get_to(d.dZdy);
+
+
+}
 
 
 using idx_t = quadgrid_t<std::vector<double>>::idx_t;
@@ -14,8 +68,11 @@ cdf::timer::timer_t my_timer{};
 
 int main ()
 {
-    DATA data ("DATA.json");
-
+  nlohmann::json json;
+  std::ifstream json_file("DATA.json");
+  json_file>>json;
+  json_file.close();
+  DATA data = json.get<DATA>();
 
   quadgrid_t<std::vector<double>> grid;
   grid.set_sizes (data.Ney, data.Nex, data.hx, data.hy);
@@ -132,7 +189,7 @@ std::vector<double> Zytilde (grid.num_global_nodes()-1,0.0);
 
    dt = 0.005;
 
-    while (t < 1)
+    while (t < 2.0)
         {
 
         my_timer.tic ("update dt");
@@ -142,16 +199,19 @@ std::vector<double> Zytilde (grid.num_global_nodes()-1,0.0);
                 double max_vel = std::max(std::sqrt(data.g * hmean)+max_vel_x,-std::sqrt(data.g * hmean)+max_vel_y);
                 cel = std::abs( max_vel);
                 if (it>0)
-                dt = 0.6 *  data.hx /  cel; //0.2 *  data.hx / (1e-4 + cel);
+                dt = 0.8 *  data.hx /  cel; //0.2 *  data.hx / (1e-4 + cel);
     	my_timer.toc ("update dt");
             std::cout << "time = " << t << "  " << " dt = " <<  dt << std::endl;
 
             std::string filename = "nc_particles_";
             filename = filename + std::to_string (it++);
             filename = filename + ".csv";
+        if (it % 100 ==0)
+        {
             std::ofstream OF (filename.c_str ());
             ptcls.print<particles_t::output_format::csv>(OF);
             OF.close ();
+          }
 
 	//  (0)  CONNECTIVITY and BASIS FUNCTIONS
 	my_timer.tic ("step 0");
@@ -249,7 +309,7 @@ std::vector<double> Zytilde (grid.num_global_nodes()-1,0.0);
 
 		      ptcls.dprops["Fric_px"][gp] =  - ptcls.dprops["Mp"][gp] *   (1.0-ptcls.dprops["H"][gp]/ptcls.dprops["hp"][gp]) * 9.81 * ptcls.dprops["dZxp"][gp]; ; // *   vars["dZdx"][gv]; // ptcls.dprops["dZxp"][gp]; // ptcls.dprops["Ap"][gp] * ptcls.dprops["Fb_x"][gp] * 0.0;
 
-		      ptcls.dprops["Fric_py"][gp] =    - ptcls.dprops["Mp"][gp] * (1.0-ptcls.dprops["H"][gp]/ptcls.dprops["hp"][gp])  * 9.81 * ptcls.dprops["dZyp"][gp];// *  vars["dZdy"][gv]; // ptcls.dprops["dZyp"][gp]; //  ptcls.dprops["Ap"][gp] *  ptcls.dprops["Fb_y"][gp] * 0.0;
+		      ptcls.dprops["Fric_py"][gp] =   -  ptcls.dprops["Mp"][gp] * (1.0-ptcls.dprops["H"][gp]/ptcls.dprops["hp"][gp])  * 9.81 * ptcls.dprops["dZyp"][gp];// *  vars["dZdy"][gv]; // ptcls.dprops["dZyp"][gp]; //  ptcls.dprops["Ap"][gp] *  ptcls.dprops["Fb_y"][gp] * 0.0;
 		    }
 	      }
 
@@ -259,6 +319,19 @@ std::vector<double> Zytilde (grid.num_global_nodes()-1,0.0);
 		   std::vector<std::string>{"F_ext_vx","F_ext_vy"});
 
 
+ /*for (auto  icell = grid.begin_cell_sweep(); icell != grid.end_cell_sweep (); ++icell)
+	  {
+	    for (auto inode = 0; inode < quadgrid_t<std::vector<double>>::cell_t::nodes_per_cell; ++inode)
+	      {
+		auto gv = icell -> gt (inode);
+    auto ncell = icell -> get_global_cell_idx();
+		vars["F_ext_vx"][gv] =  - vars["Mv"][gv] *  9.81 * vars["dZdx"][gv] ;//- vars["Fric_x"][gv]; // vars["dZdx"][gv]; // vars["dZdx"][gv]; //  dZdx[gv]  ; //-  ptcls.dprops["Ap"][gp] * ptcls.dprops["Fb_x"][gp];
+
+		vars["F_ext_vy"][gv] =  -vars["Mv"][gv] *  9.81 *  vars["dZdy"][gv] ;// - vars["Fric_y"][gv]; // vars["dZdy"][gv]; //  -   ptcls.dprops["Ap"][gp] *  ptcls.dprops["Fb_y"][gp];
+
+	      }
+
+	  } */
 
 	my_timer.toc ("step 2");
 
@@ -319,7 +392,7 @@ std::vector<double> Zytilde (grid.num_global_nodes()-1,0.0);
 	for (auto icell = grid.begin_cell_sweep ();
 	     icell != grid.end_cell_sweep (); ++icell)
 	  {
-	     if ( (icell->e (2) == 2) || (icell->e(3)==3)  )
+	     if ( (icell->e (2) == 2) || (icell->e(3)==3)  ) //1 al posto del secondo 2
 	       {
 	       for (idx_t inode = 0; inode < 4; ++inode)
 	       {
@@ -345,8 +418,25 @@ std::vector<double> Zytilde (grid.num_global_nodes()-1,0.0);
         ptcls.dprops.at("apx").assign(ptcls.num_particles, 0.0);
         ptcls.dprops.at("apy").assign(ptcls.num_particles, 0.0);
 
-        ptcls.g2p (vars,std::vector<std::string>{"vvx","vvy","avx","avy"},
+       ptcls.g2p (vars,std::vector<std::string>{"vvx","vvy","avx","avy"},
 		   std::vector<std::string>{"vpx","vpy","apx","apy"});
+
+/*	for (auto icell = grid.begin_cell_sweep ();
+	     icell != grid.end_cell_sweep (); ++icell)
+	  {
+	    for (auto inode = 0; inode < quadgrid_t<std::vector<double>>::cell_t::nodes_per_cell; ++inode)
+	      {
+		if (ptcls.grd_to_ptcl.count (icell->get_global_cell_idx ()) > 0)
+		  for (auto ip = 0; ip < ptcls.grd_to_ptcl.at (icell->get_global_cell_idx ()).size (); ++ip)
+		    {
+		      auto gp = ptcls.grd_to_ptcl.at(icell->get_global_cell_idx ())[ip];
+		      ptcls.dprops["vpx"][gp] += dt * ptcls.dprops["apx"][gp] ;
+		      ptcls.dprops["vpy"][gp] += dt * ptcls.dprops["apy"][gp] ;
+		    }
+	      }
+
+	  } */
+
 
 
 	for (auto icell = grid.begin_cell_sweep ();
@@ -360,7 +450,8 @@ std::vector<double> Zytilde (grid.num_global_nodes()-1,0.0);
 		      auto gp = ptcls.grd_to_ptcl.at(icell->get_global_cell_idx ())[ip];
 		      ptcls.x[gp] += dt * ptcls.dprops["vpx"][gp];
 		      ptcls.y[gp] += dt * ptcls.dprops["vpy"][gp];
-
+		      //  ptcls.dprops["xp"][gp] += dt * ptcls.dprops["vpx"][gp];
+		      //    ptcls.dprops["yp"][gp] += dt * ptcls.dprops["vpy"][gp];
 		    }
 	      }
 
@@ -467,7 +558,7 @@ std::vector<double> Zytilde (grid.num_global_nodes()-1,0.0);
         filename = filename + std::to_string (it);
         filename = filename + ".vts";
 	//  grid.vtk_export(filename.c_str(), Plotvars);
-	grid.vtk_export(filename.c_str(), vars);
+//	grid.vtk_export(filename.c_str(), vars);
         t +=dt;
 	my_timer.toc ("save vts");
 

@@ -18,8 +18,41 @@ Nex = NVx-1;
 Ney = NVy-1;
 x = xv(:); y = yv(:);
 
+
+Zplot =5.*exp(-2/5.*((xv-5).^2 + (yv-5).^2));  % choose this one for Z_1
+%Zplot(xv>=4 & xv<=8 & yv>=4 & yv<=8) = 4;     % choose this one for Z_2
+
+h = 0*Zplot;
+Ymin = 0; Ymax = 10; Xmin = 0; Xmax = 10;
+select = (yv>Ymin & yv<Ymax & xv >Xmin & xv < Xmax);
+
+[gx,gy] = gradient(Zplot);
+
+X = xv; Y = yv;
+h= 10 - Zplot;
+h(h < 0) = 0;
+
+surf (xv, yv, Zplot)
+hold all
+surf (X, Y, Zplot+h)
+axis equal
+xlabel('x [m]')
+ylabel('y [m]')
+zlabel('z [m]')
+title('Initial condition')
+
+DX = .17; DY = .17;
+[xp, yp] = meshgrid (Xmin:DX:Xmax, Ymin:DY:Ymax);
+
+hp = interp2 (X, Y, h, xp, yp, 'linear');
+hp = hp(:);
+xp = xp(:);
+yp = yp(:);
+
+%{
 xL      = 0+(0.5*hl(1)/nl):hl(1)/nl:10;
 yL      = 0+(0.5*hl(1)/nl):hl(1)/nl: Ly-(0.5*hl(1)/nl);
+
 [xpl,ypl] = meshgrid(xL,yL);
 L = Lx;
 
@@ -30,12 +63,11 @@ xp = [xpl(:); xpr(:)];
 yp = [ypl(:); ypr(:)];
 
 hp =  10.*ones(size(xp(:),1),1);
+%}
 
 Xp = [xp(:),yp(:)];
 
-Zplot =5.*exp(-2/5.*((xv-5).^2 + (yv-5).^2));  % choose this one for Z_1
-%Zplot(xv>=4 & xv<=8 & yv>=4 & yv<=8) = 4;     % choose this one for Z_2
-[gx,gy] = gradient(Zplot);
+
 
 figure()
 surf(xv,yv,Zplot);
@@ -75,7 +107,7 @@ T     = 1.5;
 %% Material point quantities initialization
 nmp   = numel(xp);
 rhosy = 1000.0;
-Msys  = sum (hp*hl(1)/nl.^2*rhosy);
+Msys  = sum (hp*(hl(1)/nl).^2*rhosy);
 Mp    = Msys/nmp * ones(nmp, 1);
 Vp    = Mp./rhosy;
 Ap    = Vp./hp;

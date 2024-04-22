@@ -136,7 +136,7 @@ int main ()
         //  double max_vel = std::max(1+max_vel_x,1+max_vel_y);
         cel = std::abs(max_vel);
         if (it > 0)
-          dt = 0.7*data.hx / (1e-2 + cel); //0.2 *  data.hx / (1e-4 + cel);
+          dt = 5.*data.hx / (1e-2 + cel); //0.2 *  data.hx / (1e-4 + cel);
         std::cout << "time = " << t << "  " << " dt = " <<  dt << std::endl;
         my_timer.toc ("update dt");
 
@@ -148,7 +148,7 @@ int main ()
         ptcls.print<particles_t::output_format::csv>(OF);
         OF.close ();
 	my_timer.toc ("save csv");
-	
+
         //  (0)  CONNECTIVITY and BASIS FUNCTIONS
         my_timer.tic ("reorder");
         ptcls.init_particle_mesh ();
@@ -169,7 +169,7 @@ int main ()
           }
         }
 	my_timer.toc ("reorder");
-	
+
 	my_timer.tic ("step 0");
         for (auto &v : vars) {
 	  v.second.assign (v.second.size (), 0.0);
@@ -212,13 +212,13 @@ int main ()
         // for (auto icell = grid.begin_cell_sweep (); icell != grid.end_cell_sweep (); ++icell) {
 	//   if (ptcls.grd_to_ptcl.count (icell->get_global_cell_idx ()) > 0) {
 	//     for (auto inode = 0; inode < quadgrid_t<std::vector<double>>::cell_t::nodes_per_cell; ++inode) {
-	//       auto gv = icell -> gt (inode);	    
+	//       auto gv = icell -> gt (inode);
 	//       for (auto ip = 0; ip < ptcls.grd_to_ptcl.at (icell->get_global_cell_idx ()).size (); ++ip) {
 	// 	auto gp = ptcls.grd_to_ptcl.at(icell->get_global_cell_idx ())[ip];
 	// 	ptcls.dprops["Fric_px"][gp] =  - ptcls.dprops["Mp"][gp] *    9.81 * ptcls.dprops["dZxp"][gp]; // vars["dZdx"][gv]; // - ptcls.dprops["Ap"][gp] * ptcls.dprops["Fb_x"][gp] * 0.0 ;
 	// 	ptcls.dprops["Fric_py"][gp] =  - ptcls.dprops["Mp"][gp] *    9.81 * ptcls.dprops["dZyp"][gp]; // -  ptcls.dprops["Ap"][gp] *  ptcls.dprops["Fb_y"][gp] * 0.0;
 	//       }
-	//     }	    
+	//     }
 	//   }
 	// }
 
@@ -227,7 +227,7 @@ int main ()
         ptcls.p2g (vars,std::vector<std::string>{"Fric_px","Fric_py"},
                    std::vector<std::string>{"F_ext_vx","F_ext_vy"});
 
-        /*     
+        /*
 	       for (auto icell = grid.begin_cell_sweep ();
 	       icell != grid.end_cell_sweep (); ++icell)
 	       {
@@ -235,14 +235,14 @@ int main ()
 	       {
 	       auto gv = icell -> gt (inode);
 
-	       vars["F_ext_vx"][gv] = -  vars["Mv"][gv] *  9.81 * vars["dZdx"][gv] - vars["Fric_x"][gv]; // vars["dZdx"][gv]; // vars["dZdx"][gv]; //  dZdx[gv]  ; 
+	       vars["F_ext_vx"][gv] = -  vars["Mv"][gv] *  9.81 * vars["dZdx"][gv] - vars["Fric_x"][gv]; // vars["dZdx"][gv]; // vars["dZdx"][gv]; //  dZdx[gv]  ;
 	       //-  ptcls.dprops["Ap"][gp] * ptcls.dprops["Fb_x"][gp];
 
                 vars["F_ext_vy"][gv] = -  vars["Mv"][gv] *  9.81 *  vars["dZdy"][gv] - vars["Fric_y"][gv]; // vars["dZdy"][gv]; //  -   ptcls.dprops["Ap"][gp] *  ptcls.dprops["Fb_y"][gp];
 
                 }
 
-                } 
+                }
 	*/
 
         my_timer.toc ("step 2");
@@ -254,7 +254,7 @@ int main ()
                     "Vp",std::vector<std::string>{"F_int_vx","F_int_vy"});
 
 
-	
+
 	std::transform (vars["F_ext_vx"].begin (), vars["F_ext_vx"].end (), vars["F_int_vx"].begin (), vars["Ftot_vx"].begin (), std::plus<double> ());
 	std::transform (vars["F_ext_vy"].begin (), vars["F_ext_vy"].end (), vars["F_int_vy"].begin (), vars["Ftot_vy"].begin (), std::plus<double> ());
         // for (auto icell = grid.begin_cell_sweep (); icell != grid.end_cell_sweep (); ++icell) {
@@ -278,7 +278,7 @@ int main ()
 	//     }
 	//   }
 	// }
-	
+
         my_timer.toc ("step 3");
 
         // (4)  COMPUTE NODAL ACCELERATIONS AND VELOCITIES
@@ -289,7 +289,7 @@ int main ()
 	      auto iv = icell -> gt (inode);
 	      vars["avx"][iv] = vars["Mv"][iv] > 1e-6 ?  vars["Ftot_vx"][iv] / vars["Mv"][iv] : 0.0;
 	      vars["avy"][iv] = vars["Mv"][iv] > 1e-6 ? vars[ "Ftot_vy"][iv] / vars["Mv"][iv] : 0.0;
-	    
+
 	      vars["vvx"][iv] = vars["Mv"][iv] > 1e-6 ?  vars["mom_vx"][iv] / vars["Mv"][iv] : 0.0;
 	      vars["vvy"][iv] = vars["Mv"][iv] > 1e-6 ?  vars["mom_vy"][iv] / vars["Mv"][iv] : 0.0;
 	    }
@@ -299,10 +299,10 @@ int main ()
 
         // (5) BOUNDARY CONDITIONS - TO DO
         my_timer.tic ("step 5");
-        /*      for (auto icell = grid.begin_cell_sweep ();
+           for (auto icell = grid.begin_cell_sweep ();
                 icell != grid.end_cell_sweep (); ++icell)
                 {
-                if ( (icell->e (2) == 2) || (icell->e(1)==3)  )
+                if ( (icell->e (2) == 2) || (icell->e(3)==3)  )
                 {
                 for (idx_t inode = 0; inode < 4; ++inode)
                 {
@@ -318,7 +318,7 @@ int main ()
                 vars["vvy"][icell->gt(inode)] = 0.0;
                 }
                 }
-                } */
+                }
         my_timer.toc ("step 5");
 
         // (6) RETURN TO POINTS (G2P) and UPDATE POS AND VEL ON PARTICLES
@@ -336,7 +336,7 @@ int main ()
 	std::transform (ptcls.dprops["apy"].begin (), ptcls.dprops["apy"].end (), ptcls.dprops["vpy"].begin (), ptcls.dprops["vpy"].begin (), [=] (double x, double y) { return y + dt * x; });
         // for (auto icell = grid.begin_cell_sweep (); icell != grid.end_cell_sweep (); ++icell) {
 	//   if (ptcls.grd_to_ptcl.count (icell->get_global_cell_idx ()) > 0) {
-	//     for (auto inode = 0; inode < quadgrid_t<std::vector<double>>::cell_t::nodes_per_cell; ++inode) {	    
+	//     for (auto inode = 0; inode < quadgrid_t<std::vector<double>>::cell_t::nodes_per_cell; ++inode) {
 	//       for (auto ip = 0; ip < ptcls.grd_to_ptcl.at (icell->get_global_cell_idx ()).size (); ++ip) {
 	// 	auto gp = ptcls.grd_to_ptcl.at(icell->get_global_cell_idx ())[ip];
 	// 	ptcls.dprops["vpx"][gp] += dt * ptcls.dprops["apx"][gp] ;
@@ -361,7 +361,7 @@ int main ()
 	//     }
 	//   }
 	// }
-	
+
         my_timer.toc ("step 6");
 
         // (7) COMPUTE HEIGHT WITH STRAIN (divergence of velocities)
@@ -377,7 +377,7 @@ int main ()
 	std::transform (ptcls.dprops["hp"].begin (), ptcls.dprops["hp"].end (), norm_v.begin (), ptcls.dprops["hp"].begin (), [=] (double x, double y) { return x / (1 + dt * y); } );
 	std::transform (ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["Mp"].begin (), ptcls.dprops["mom_px"].begin (), std::multiplies<double> () );
 	std::transform (ptcls.dprops["vpy"].begin (), ptcls.dprops["vpy"].end (), ptcls.dprops["Mp"].begin (), ptcls.dprops["mom_py"].begin (), std::multiplies<double> () );
-	std::transform (ptcls.dprops["Vp"].begin (), ptcls.dprops["Vp"].end (), norm_v.begin (), ptcls.dprops["Vp"].begin (), [=] (double x, double y) { return x / (1 + dt * y); } );
+//	std::transform (ptcls.dprops["Vp"].begin (), ptcls.dprops["Vp"].end (), norm_v.begin (), ptcls.dprops["Vp"].begin (), [=] (double x, double y) { return x / (1 + dt * y); } );
 	std::transform (ptcls.dprops["Mp"].begin (), ptcls.dprops["Mp"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Ap"].begin (), [&] (double x, double y) { return x / (data.rho * y); } );
         // for (auto icell = grid.begin_cell_sweep (); icell != grid.end_cell_sweep (); ++icell) {
 	//   if (ptcls.grd_to_ptcl.count (icell->get_global_cell_idx ()) > 0) {
@@ -402,7 +402,7 @@ int main ()
 	std::transform (ptcls.dprops["hp"].begin (), ptcls.dprops["hp"].end (), ptcls.dprops["F_11"].begin (), [&] (double x) { return .5 * data.rho * data.g * x; });
 	ptcls.dprops["F_12"].assign (ptcls.num_particles, 0.0);
 	ptcls.dprops["F_21"].assign (ptcls.num_particles, 0.0);
-	std::transform (ptcls.dprops["hp"].begin (), ptcls.dprops["hp"].end (), ptcls.dprops["F_22"].begin (), [&] (double x) { return .5 * data.rho * data.g * x; });	
+	std::transform (ptcls.dprops["hp"].begin (), ptcls.dprops["hp"].end (), ptcls.dprops["F_22"].begin (), [&] (double x) { return .5 * data.rho * data.g * x; });
 	// for (auto icell = grid.begin_cell_sweep (); icell != grid.end_cell_sweep (); ++icell) {
 	//   if (ptcls.grd_to_ptcl.count (icell->get_global_cell_idx ()) > 0) {
 	//     for (auto inode = 0; inode < quadgrid_t<std::vector<double>>::cell_t::nodes_per_cell; ++inode) {
@@ -419,10 +419,10 @@ int main ()
 	//     }
 	//   }
 	// }
-	
+
         ptcls.dprops.at("hpZ").assign(ptcls.num_particles, 0.0);
         ptcls.dprops.at("Zp").assign(ptcls.num_particles, 0.0);
-	
+
         ptcls.g2p (vars,std::vector<std::string>{"Z"},
                    std::vector<std::string>{"Zp"});
 
@@ -441,10 +441,10 @@ int main ()
 
 	std::transform (ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["vpy"].begin (), norm_v.begin (), [] (double x, double y) { return std::sqrt (x*x + y*y); });
 	std::transform (ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Fb_x"].begin (),
-			[&] (double x, double y) { return - data.rho * data.g * ( y * std::tan(fric_ang) + x * x  / data.xi) * x; });
+			[&] (double x, double y) { return - 0.0 * data.rho * data.g * ( y * std::tan(fric_ang) + x * x  / data.xi) * x; });
 	std::transform (ptcls.dprops["Fb_x"].begin (), ptcls.dprops["Fb_x"].end (), norm_v.begin (), ptcls.dprops["Fb_x"].begin (), std::divides<double> ());
 	std::transform (ptcls.dprops["vpy"].begin (), ptcls.dprops["vpy"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Fb_y"].begin (),
-			[&] (double x, double y) { return - data.rho * data.g * ( y * std::tan(fric_ang) + x * x  / data.xi) * x; });
+			[&] (double x, double y) { return - 0.0 * data.rho * data.g * ( y * std::tan(fric_ang) + x * x  / data.xi) * x; });
 	std::transform (ptcls.dprops["Fb_y"].begin (), ptcls.dprops["Fb_y"].end (), norm_v.begin (), ptcls.dprops["Fb_y"].begin (), std::divides<double> ());
         // for (idx_t ip = 0; ip < num_particles; ++ip)
         //   {
@@ -467,7 +467,7 @@ int main ()
 	my_timer.tic ("step 8b");
         ptcls.p2g (vars,std::vector<std::string>{"hp"}, std::vector<std::string>{"HV"});
 	my_timer.toc ("step 8b");
-        
+
 
         my_timer.tic ("save vts");
         filename = "nc_grid_";
@@ -477,9 +477,9 @@ int main ()
         grid.vtk_export(filename.c_str(), vars);
         t +=dt;
         my_timer.toc ("save vts");
-	
+
         my_timer.print_report ();
-                
+
       }
 
     my_timer.print_report ();

@@ -153,11 +153,11 @@ scatter3(xp,yp,hp,10,'r')
 colormap('hsv');
 %}
 
-%figure(1)
-%surf(X,Y,zplot);
-%hold on
-%scatter3(xp,yp,hp,10,'r')
-%colormap('hsv');
+figure(1)
+surf(X,Y,zplot);
+hold on
+scatter3(xp,yp,hp,10,'r')
+colormap('hsv');
 
 
 %figure(2)
