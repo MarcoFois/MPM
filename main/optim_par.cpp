@@ -122,7 +122,7 @@ int main ()
 
   //tbb::global_control(tbb::global_control::max_allowed_parallelism, 1);
 
-  DATA data ("DATA.json");
+  DATA data ("../data/dambreak/DATA.json");
 
   quadgrid_t<std::vector<double>> grid;
   grid.set_sizes (data.Ney, data.Nex, data.hx, data.hy);
@@ -144,8 +144,34 @@ int main ()
   ptcls.dprops["mom_py"] = data.mom_py;
   ptcls.dprops["hp"] = data.hp;
   ptcls.dprops["Vp"] = data.Vp;
-  ptcls.dprops["xp"] = data.x;
-  ptcls.dprops["yp"] = data.y;
+  // ptcls.dprops["xp"] = data.x;
+  // ptcls.dprops["yp"] = data.y;
+
+// Code to bring particles inside the boundaries
+  double xmax=grid.hx()*grid.num_cols();
+  double ymax=grid.hy()*grid.num_rows();
+  double tol=0.1;
+  for (size_t ip=0; ip<num_particles;++ip){
+    if (std::abs(ptcls.x[ip]-xmax)<tol/2 || ptcls.x[ip]>xmax){
+      ptcls.x[ip]=xmax-tol;}
+      
+    if( ptcls.x[ip]<0.){
+          ptcls.x[ip]=0.;}
+
+    if(std::abs(ptcls.y[ip]-ymax)<tol/2 || ptcls.y[ip]>ymax){
+      // std::cout<<"xmax: "<<xmax<<" ymax: "<<ymax<<" tol: "<<tol/2<<" ip: "<<ip<<std::endl;
+      // std::cout<<"ptcls.y[ip] prima: "<<ptcls.y[ip]<<std::endl;
+      ptcls.y[ip]=ymax-tol;
+      //std::cout<<"ptcls.y[ip] dopo: "<<ptcls.y[ip]<<std::endl;
+    }
+
+    if( ptcls.y[ip]<0.){
+      ptcls.y[ip]=0.;}
+  }
+
+
+  ptcls.init_particle_mesh ();
+
 
 
   for (idx_t ip = 0; ip < num_particles; ++ip)
@@ -250,7 +276,7 @@ int main ()
 
     ptcls.build_mass();
     grid.vtk_export("GRID_forZ.vts", vars);
-    dt = 1.0e-5;
+    dt = 1.0e-5;// Used only at first iteration
     std::vector<idx_t> ordering (ptcls.num_particles);
 
     while (t < data.T) //data.T
@@ -268,8 +294,17 @@ int main ()
 
         max_vel_y = std::max (std::abs(max_vel_y), std::abs(min_vel_y));
 
+//std::vector<double> const & a=ptcls.dprops["hp"];
+// for (idx_t i=0;i<1000;++i){
+// std::cout<<" hp "<<a[i]<<" "<<a[num_particles-1-i]<<std::endl;
+
+// }
+
+
         double hmean = *std::max_element (ptcls.dprops["hp"].begin(), ptcls.dprops["hp"].end());
+        std::cout<<data.g<<" "<<hmean<<std::endl;
         double max_vel = std::max(std::sqrt(data.g * hmean) + max_vel_x, std::sqrt(data.g * hmean) + max_vel_y);
+        // è una velocità caratteristica
         cel = std::abs(max_vel);
 
         if (it > 0)
@@ -280,12 +315,12 @@ int main ()
 
         my_timer.tic ("save csv");
         std::string filename = "nc_particles_";
-        filename = filename + std::to_string (it++);
+        filename = filename + std::to_string (it);
         filename = filename + ".csv";
 #ifdef USE_COMPRESSION
 	filename = filename + ".gz";
 #endif
-        if (it % 100 == 0)
+        if (it++ % 100 == 0)
           {
 #ifdef USE_COMPRESSION
 	    boost::iostreams::filtering_ostream OF;
@@ -385,13 +420,18 @@ int main ()
         ptcls.p2gd (vars, {"F_11","F_21"}, {"F_12","F_22"}, "Vp", {"F_int_vx","F_int_vy"});
         my_timer.toc ("p2gd");
 
+
+
+
+
+
         my_timer.tic ("step 3");
 
         transform (policy, vars["F_ext_vx"].begin (), vars["F_ext_vx"].end (), vars["F_int_vx"].begin (), vars["Ftot_vx"].begin (), std::minus<double> ());
         transform (policy, vars["F_ext_vy"].begin (), vars["F_ext_vy"].end (), vars["F_int_vy"].begin (), vars["Ftot_vy"].begin (), std::minus<double> ());
 
-        transform (policy, vars["Ftot_vx"].begin (), vars["Ftot_vx"].end (), vars["Ftot_vx"].begin (), vars["mom_vx"].begin (), [=] (double x, double y) { return dt*x + y; });
-        transform (policy, vars["Ftot_vy"].begin (), vars["Ftot_vy"].end (), vars["Ftot_vy"].begin (), vars["mom_vy"].begin (), [=] (double x, double y) { return dt*x + y; });
+        transform (policy, vars["Ftot_vx"].begin (), vars["Ftot_vx"].end (), vars["mom_vx"].begin (), vars["mom_vx"].begin (), [=] (double x, double y) { return dt*x + y; });
+        transform (policy, vars["Ftot_vy"].begin (), vars["Ftot_vy"].end (), vars["mom_vy"].begin (), vars["mom_vy"].begin (), [=] (double x, double y) { return dt*x + y; });
 
         my_timer.toc ("step 3");
 
@@ -414,12 +454,68 @@ int main ()
           for (auto icell = grid.begin_cell_sweep ();
               icell != grid.end_cell_sweep (); ++icell)
               {
+                // if (icell->e (2) == 2){
+                //   idx_t inode=0;
+                //   // vars["avx"][icell->gt(inode)] = 0.0;
+                //   vars["vvx"][icell->gt(inode)] = 0.0;
+                //   vars["vvy"][icell->gt(inode)] = 0.0;
+                // // vars["mom_vx"][icell->gt(inode)] = 0.0;
+
+                //   inode=1;
+                //   // vars["avx"][icell->gt(inode)] = 0.0;
+                //   vars["vvx"][icell->gt(inode)] = 0.0;
+                //   vars["vvy"][icell->gt(inode)] = 0.0;
+                //   // vars["mom_vx"][icell->gt(inode)] = 0.0;
+                // }
+                // if(icell->e(3)==3){
+                //   idx_t inode=2;
+                //   // vars["avx"][icell->gt(inode)] = 0.0;
+                //   vars["vvx"][icell->gt(inode)] = 0.0;
+                //    vars["vvy"][icell->gt(inode)] = 0.0;
+                //  // vars["mom_vx"][icell->gt(inode)] = 0.0;
+                  
+                //   inode=3;
+                //   // vars["avx"][icell->gt(inode)] = 0.0;
+                //   vars["vvx"][icell->gt(inode)] = 0.0;
+                //   vars["vvy"][icell->gt(inode)] = 0.0;
+                //  // vars["mom_vx"][icell->gt(inode)] = 0.0;
+                // }
+                // if(icell->e(0)==0){
+                //   idx_t inode=0;
+                //   // vars["avy"][icell->gt(inode)] = 0.0;
+                //   vars["vvy"][icell->gt(inode)] = 0.0;
+                //   vars["vvx"][icell->gt(inode)] = 0.0;
+
+                //   // vars["mom_vy"][icell->gt(inode)] = 0.0;
+                  
+                //   inode=2;
+                //   // vars["avy"][icell->gt(inode)] = 0.0;
+                //   vars["vvy"][icell->gt(inode)] = 0.0;
+                //   vars["vvx"][icell->gt(inode)] = 0.0;
+
+                //   // vars["mom_vy"][icell->gt(inode)] = 0.0;
+                // }
+                // if(icell->e(1)==1){
+                //   idx_t inode=1;
+                //   // vars["avy"][icell->gt(inode)] = 0.0;
+                //   vars["vvy"][icell->gt(inode)] = 0.0;
+                //   vars["vvx"][icell->gt(inode)] = 0.0;
+                //   // vars["mom_vy"][icell->gt(inode)] = 0.0;
+                  
+                //   inode=3;
+                //   // vars["avy"][icell->gt(inode)] = 0.0;
+                //   vars["vvy"][icell->gt(inode)] = 0.0;
+                //   vars["vvx"][icell->gt(inode)] = 0.0;
+                //   // vars["mom_vy"][icell->gt(inode)] = 0.0;
+                // }
+                
+                
                 if ( (icell->e (2) == 2) || (icell->e(3)==3)  )
                 {
                   for (idx_t inode = 0; inode < 4; ++inode)
                   {
-                    //vars["avx"][icell->gt(inode)] = 0.0;
-                  //  vars["vvx"][icell->gt(inode)] = 0.0;
+                    vars["avx"][icell->gt(inode)] = 0.0;
+                    vars["vvx"][icell->gt(inode)] = 0.0;
                     vars["mom_vx"][icell->gt(inode)] = 0.0;
                   }
                 }
@@ -427,14 +523,14 @@ int main ()
                   {
                    for (idx_t inode = 0; inode < 4; ++inode)
                   {
-                  //  vars["avy"][icell->gt(inode)] = 0.0;
-                  //  vars["vvy"][icell->gt(inode)] = 0.0;
+                    vars["avy"][icell->gt(inode)] = 0.0;
+                    vars["vvy"][icell->gt(inode)] = 0.0;
                     vars["mom_vy"][icell->gt(inode)] = 0.0;
                   }
               }
           }
-        }
-        my_timer.toc ("step 5");
+  }
+  my_timer.toc ("step 5");
 
         // (6) RETURN TO POINTS (G2P) and UPDATE POS AND VEL ON PARTICLES
         my_timer.tic ("step 6");
@@ -463,6 +559,22 @@ int main ()
         transform (policy, ptcls.x.begin (), ptcls.x.end (),  ptcls.dprops["vpx"].begin (), ptcls.x.begin (), [=] (double x, double y) { return x + dt * y; } );
         transform (policy, ptcls.y.begin (), ptcls.y.end (),  ptcls.dprops["vpy"].begin (), ptcls.y.begin (), [=] (double x, double y) { return x + dt * y; } );
 
+        // Keep particles inside boundaries
+        for (size_t ip=0; ip<num_particles;++ip){
+            if (std::abs(ptcls.x[ip]-xmax)<tol/2 || ptcls.x[ip]>xmax)
+              ptcls.x[ip]=xmax-tol;
+
+            if( ptcls.x[ip]<0.)
+              ptcls.x[ip]=0.;
+
+            
+            if(std::abs(ptcls.y[ip]-ymax)<tol/2 || ptcls.y[ip]>ymax)
+              ptcls.y[ip]=ymax-tol;
+
+            if(ptcls.y[ip]<0.)
+              ptcls.y[ip]=0.;
+          }
+
 
         my_timer.toc ("step 6b");
 
@@ -478,13 +590,13 @@ int main ()
 
         my_timer.tic ("step 7");
         transform (policy, ptcls.dprops["vpx_dx"].begin (), ptcls.dprops["vpx_dx"].end (), ptcls.dprops["vpy_dy"].begin (), div_vp.begin (), std::plus<double> ());
-        transform (policy, ptcls.dprops["hp"].begin (), ptcls.dprops["hp"].end (), div_vp.begin (), ptcls.dprops["hp"].begin (), [=] (double x, double y) { return x / (1 + dt * y); } );
+        transform (policy, ptcls.dprops["hp"].begin (), ptcls.dprops["hp"].end (), div_vp.begin (), ptcls.dprops["hp"].begin (), [dt] (double x, double y) { return x / (1 + dt * y); } );
         transform (policy, ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["Mp"].begin (), ptcls.dprops["mom_px"].begin (), std::multiplies<double> () );
         transform (policy, ptcls.dprops["vpy"].begin (), ptcls.dprops["vpy"].end (), ptcls.dprops["Mp"].begin (), ptcls.dprops["mom_py"].begin (), std::multiplies<double> () );
-        transform (policy, ptcls.dprops["Vp"].begin (), ptcls.dprops["Vp"].end (), div_vp.begin (), ptcls.dprops["Vp"].begin (), [=] (double x, double y) { return x / (1 + dt * y); } );
+        transform (policy, ptcls.dprops["Vp"].begin (), ptcls.dprops["Vp"].end (), div_vp.begin (), ptcls.dprops["Vp"].begin (), [dt] (double x, double y) { return x / (1 + dt * y); } );
        // transform (policy, ptcls.dprops["hp"].begin (), ptcls.dprops["hp"].end (), ptcls.dprops["Mp"].begin (),ptcls.dprops["Ap"].begin (), [=] (double x, double y) { return y / (1e-4 + data.rho * x); } );
       // transform (policy, ptcls.dprops["hp"].begin (), ptcls.dprops["hp"].end (), ptcls.dprops["Ap"].begin (),ptcls.dprops["Mp"].begin (), [] (double x, double y) { return x * y * 1291.0 ; } );
-        transform (policy, ptcls.dprops["Vp"].begin (), ptcls.dprops["Vp"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Ap"].begin (), std::divides<double> () );
+        transform (policy, ptcls.dprops["Vp"].begin (), ptcls.dprops["Vp"].end (), ptcls.dprops["hp"].begin (), ptcls.dprops["Ap"].begin (), [] (double x, double y) { return y > 1.e-4 ? x/y : 0.0; } );//std::divides<double>()
 
         my_timer.toc ("step 7");
 
@@ -493,10 +605,10 @@ int main ()
         transform (policy, ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["vpy"].begin (), norm_v.begin (), [] (double x, double y) { return std::sqrt (x*x + y*y); });
         transform (policy, ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["hp"].begin (),  ptcls.dprops["Fb_x"].begin (),
                    [&] (double x, double y) { return  data.FRICTION_ON *  ( data.rho * data.g * y * std::tan(fric_ang) + data.rho * data.g * x * x  / data.xi) * x; });
-        transform (policy, ptcls.dprops["Fb_x"].begin (), ptcls.dprops["Fb_x"].end (), norm_v.begin (), ptcls.dprops["Fb_x"].begin (), std::divides<double> ());
+        transform (policy, ptcls.dprops["Fb_x"].begin (), ptcls.dprops["Fb_x"].end (), norm_v.begin (), ptcls.dprops["Fb_x"].begin (), [] (double x, double y) { return y > 1.e-2 ? x/y : 0.0; });
         transform (policy, ptcls.dprops["vpy"].begin (), ptcls.dprops["vpy"].end (), ptcls.dprops["hp"].begin (),  ptcls.dprops["Fb_y"].begin (),
                    [&] (double x, double y) { return   data.FRICTION_ON *  ( data.rho * data.g * y * std::tan(fric_ang) + data.rho * data.g * x * x  / data.xi) * x; }); //data.rho * data.g * ( y * std::tan(fric_ang) + x * x  / data.xi) * x
-        transform (policy, ptcls.dprops["Fb_y"].begin (), ptcls.dprops["Fb_y"].end (), norm_v.begin (), ptcls.dprops["Fb_y"].begin (), std::divides<double> ());
+        transform (policy, ptcls.dprops["Fb_y"].begin (), ptcls.dprops["Fb_y"].end (), norm_v.begin (), ptcls.dprops["Fb_y"].begin (), [] (double x, double y) { return y > 1.e-2 ? x/y : 0.0; });
         my_timer.toc ("step 7b");
 
 
