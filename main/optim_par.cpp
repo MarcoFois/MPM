@@ -304,7 +304,7 @@ int main ()
         double hmean = *std::max_element (ptcls.dprops["hp"].begin(), ptcls.dprops["hp"].end());
         std::cout<<data.g<<" "<<hmean<<std::endl;
         double max_vel = std::max(std::sqrt(data.g * hmean) + max_vel_x, std::sqrt(data.g * hmean) + max_vel_y);
-        // è una velocità caratteristica
+
         cel = std::abs(max_vel);
 
         if (it > 0)
@@ -419,9 +419,6 @@ int main ()
         my_timer.tic ("p2gd");
         ptcls.p2gd (vars, {"F_11","F_21"}, {"F_12","F_22"}, "Vp", {"F_int_vx","F_int_vy"});
         my_timer.toc ("p2gd");
-
-
-
 
 
 
@@ -605,10 +602,10 @@ int main ()
         transform (policy, ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["vpy"].begin (), norm_v.begin (), [] (double x, double y) { return std::sqrt (x*x + y*y); });
         transform (policy, ptcls.dprops["vpx"].begin (), ptcls.dprops["vpx"].end (), ptcls.dprops["hp"].begin (),  ptcls.dprops["Fb_x"].begin (),
                    [&] (double x, double y) { return  data.FRICTION_ON *  ( data.rho * data.g * y * std::tan(fric_ang) + data.rho * data.g * x * x  / data.xi) * x; });
-        transform (policy, ptcls.dprops["Fb_x"].begin (), ptcls.dprops["Fb_x"].end (), norm_v.begin (), ptcls.dprops["Fb_x"].begin (), [] (double x, double y) { return y > 1.e-2 ? x/y : 0.0; });
+        transform (policy, ptcls.dprops["Fb_x"].begin (), ptcls.dprops["Fb_x"].end (), norm_v.begin (), ptcls.dprops["Fb_x"].begin (), [] (double x, double y) { return y > 1.e-4 ? x/y : 0.0; });
         transform (policy, ptcls.dprops["vpy"].begin (), ptcls.dprops["vpy"].end (), ptcls.dprops["hp"].begin (),  ptcls.dprops["Fb_y"].begin (),
                    [&] (double x, double y) { return   data.FRICTION_ON *  ( data.rho * data.g * y * std::tan(fric_ang) + data.rho * data.g * x * x  / data.xi) * x; }); //data.rho * data.g * ( y * std::tan(fric_ang) + x * x  / data.xi) * x
-        transform (policy, ptcls.dprops["Fb_y"].begin (), ptcls.dprops["Fb_y"].end (), norm_v.begin (), ptcls.dprops["Fb_y"].begin (), [] (double x, double y) { return y > 1.e-2 ? x/y : 0.0; });
+        transform (policy, ptcls.dprops["Fb_y"].begin (), ptcls.dprops["Fb_y"].end (), norm_v.begin (), ptcls.dprops["Fb_y"].begin (), [] (double x, double y) { return y > 1.e-4 ? x/y : 0.0; });
         my_timer.toc ("step 7b");
 
 
