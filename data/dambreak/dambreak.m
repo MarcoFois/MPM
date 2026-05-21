@@ -6,8 +6,8 @@ clc;
 neley = 60;
 nelex = 200;
 
-##hx = 0.5;
-##hy = 0.5;
+%%hx = 0.5;
+%%hy = 0.5;
 
 y = linspace (0, 30,neley+1);
 x = linspace (0, 100, nelex+1);
@@ -21,20 +21,20 @@ hy = 30/neley;
 Z =ones(size(X));% 0*X;
 
 
-##h = 0*Z;
-Ymin = 0; Ymax = 30; Xmin = 0; Xmax = 100;
-##select = (Y>=Ymin & Y<=Ymax & X >=Xmin & X <= Xmax);
-####
-##h(select)= 5 - Z(select);
-##h(h < 0) = 0;
-####
-##surf (X, Y, Z)
-##hold all
-##surf (X, Y, Z+h)
-##axis equal
+%%h = 0*Z;
+Ymin = 0; Ymax = 30; Xmin = 0; Xmax = 50;
+%%select = (Y>=Ymin & Y<=Ymax & X >=Xmin & X <= Xmax);
+%%%%
+%%h(select)= 5 - Z(select);
+%%h(h < 0) = 0;
+%%%%
+%%surf (X, Y, Z)
+%%hold all
+%%surf (X, Y, Z+h)
+%%axis equal
 
 
-DX = .5; DY = .5;
+DX = .2; DY = .2;
 [xp, yp] = meshgrid (Xmin:DX:Xmax, Ymin:DY:Ymax);
 
 %hp = interp2 (X, Y, h, xp, yp, 'spline');
@@ -75,7 +75,7 @@ g     = 9.81;
 xi    = 200;
 vis   = 50;
 ty    = 2000;
-T     = 10;
+T     = 1;
 
 %% Material point quantities initialization
 nmp   = numel(xp);
@@ -95,7 +95,7 @@ Fb(:,1) = zeros (nmp,1);
 Fb(:,2) = zeros (nmp,1);
 
 %%
-DATA = struct (
+DATA = struct (...
 	   "x", xp, ...
 	   "y", yp, ...
 	   "Mp", Mp, ...
@@ -117,12 +117,12 @@ DATA = struct (
 	   "rho", rhosy, ...
 	   "Vp", Vp, ...
 	   "Z", Z, ...
-	   "dZdx", dZdx,
-	   "dZdy", dZdy,
-     "BINGHAM_ON", BINGHAM,
-     "FRICTION_ON", FRICTION,
-     "CFL", CFL,
-     "BC_FLAG",BC_FLAG
+	   "dZdx", dZdx,...
+	   "dZdy", dZdy,...
+     "BINGHAM_ON", BINGHAM,...
+     "FRICTION_ON", FRICTION,...
+     "CFL", CFL,...
+     "BC_FLAG",BC_FLAG...
 	 );
 json = jsonencode(DATA);
 
