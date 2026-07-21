@@ -1,11 +1,11 @@
 CXX ?= g++
 
 TARGET := optim_par
-SRC := optim_par.cpp ../quadgrid/src/particles.cpp ../timer/src/timer.cpp
+SRC := optim_par_corr.cpp ../quadgrid/src/particles.cpp ../timer/src/timer.cpp
 OBJ := $(SRC:.cpp=.o)
 
 INCLUDES := -I. -I../quadgrid/include -I../timer/src -I../json/single_include/nlohmann
-CXXFLAGS ?= -g -std=c++20 -Wall -Wextra
+CXXFLAGS ?= -std=c++20 -O3
 LDFLAGS ?=
 LDLIBS ?=
 TBB_LIBDIR ?=
