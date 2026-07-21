@@ -266,10 +266,10 @@ int main ()
     }
 
     for (idx_t ip = 0; ip<num_particles; ++ip)  {
-      ptcls.dprops["F_11"][ip] =   .5 * data.rho * data.g *   (ptcls.dprops["hp"][ip]   ) ;
+      ptcls.dprops["F_11"][ip] =  - .5 * data.rho * data.g *   (ptcls.dprops["hp"][ip]   ) ;
       ptcls.dprops["F_12"][ip] = 0.0;
       ptcls.dprops["F_21"][ip] = 0.0;
-      ptcls.dprops["F_22"][ip] =  .5 * data.rho * data.g *   (ptcls.dprops["hp"][ip] );
+      ptcls.dprops["F_22"][ip] = - .5 * data.rho * data.g *   (ptcls.dprops["hp"][ip] );
     }
 
     int it = 0;
